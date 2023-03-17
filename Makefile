@@ -21,11 +21,8 @@ EXEC_PTHREAD=conv-pthread
 UNAME=$(shell uname)
 
 # Non Recursive Assignments
-# If Linux bin file
-ifeq ($(UNAME), Linux)
-EXEC_OPENMP:=$(EXEC_OPENMP).bin
-EXEC_PTHREAD:=$(EXEC_PTHREAD).bin
-else # Else Windows exe file
+# If Windows give .exe  extension else no extension
+ifneq ($(UNAME), Linux)
 EXEC_OPENMP:=$(EXEC_OPENMP).exe
 EXEC_PTHREAD:=$(EXEC_PTHREAD).exe
 endif
