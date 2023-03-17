@@ -1,3 +1,7 @@
+# Usage: make # This makes with openmp flag
+# 		 make conv-pthread # This makes with pthread flag instead
+# 		 make run # Runs openmp, else pthread
+# 		 make clean # Removes all executables if exist
 # Compiler used
 CC=gcc
 
