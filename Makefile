@@ -10,14 +10,28 @@ OPENMP=-fopenmp
 # pthread flag
 PTHREAD=-pthread
 
-# Executable Name
+# Default command testing on
+COMMAND=100 100 5 5 5
+
+# Name of Executables
 EXEC_OPENMP=conv-openmp
 EXEC_PTHREAD=conv-pthread
 
+# Operating System name
+UNAME=$(shell uname)
+
+# Non Recursive Assignments
+# If Linux bin file
+ifeq ($(UNAME), Linux)
+EXEC_OPENMP:=$(EXEC_OPENMP).bin
+EXEC_PTHREAD:=$(EXEC_PTHREAD).bin
+else # Else Windows exe file
+EXEC_OPENMP:=$(EXEC_OPENMP).exe
+EXEC_PTHREAD:=$(EXEC_PTHREAD).exe
+endif
+
 # Default Executable when run with "make" 
 .DEFAULT_GOAL: $(EXEC_OPENMP)
-
-COMMAND=100 100 5 5 5
 
 # Openmp command
 $(EXEC_OPENMP): conv-harness.c
@@ -26,6 +40,8 @@ $(EXEC_OPENMP): conv-harness.c
 # Pthread command
 $(EXEC_PTHREAD): conv-harness.c
 	$(CC) -o $@ conv-harness.c $(CFLAGS) $(PTHREAD)
+
+all: $(EXEC_OPENMP) $(EXEC_PTHREAD)
 
 # Run with specified flags
 run: 
