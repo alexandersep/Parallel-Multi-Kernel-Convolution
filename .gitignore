@@ -1,0 +1,3 @@
+# Ignore Executable files generated from Makefile
+./conv-openmp
+./conv-pthread
