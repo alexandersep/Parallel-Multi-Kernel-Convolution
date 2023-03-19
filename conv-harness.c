@@ -339,16 +339,14 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
         int width, int height, int nchannels, int nkernels,
         int kernel_order)
 {
-    // this call here is just dummy code that calls the slow, simple, correct version.
-    // insert your own code instead
-    //multichannel_conv(image, kernels, output, width,
-    //                  height, nchannels, nkernels, kernel_order);
+
     int h, w, x, y, c, m;
     float * image_1d = **image;
     int16_t * kernel = ***kernels;
     int ko2 = kernel_order * kernel_order;
     int width_offset = (height+kernel_order) * nchannels;
     int kernel_offset = nchannels * ko2;
+
     for ( m = 0; m < nkernels; m++ ) {
         for ( w = 0; w < width; w++ ) {
             for ( h = 0; h < height; h++ ) {
@@ -356,8 +354,7 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
                 for ( x = 0; x < kernel_order; x++) {
                     for ( y = 0; y < kernel_order; y++) {
                         for ( c = 0; c < nchannels; c++) {
-                        //printf("%p vs %p\n", &kernels[m][c][x][y], &kernel[m * nchannels * kernel_order * kernel_order + c * kernel_order * kernel_order + x * kernel_order + y]);
-                            sum += image_1d[(w+x) * width_offset + ((h+y) * (nchannels)) + c] * kernel[m * kernel_offset + c * ko2 + x * kernel_order + y];
+                            sum += image_1d[(w+x) * width_offset + (h+y) * nchannels + c] * kernel[m * kernel_offset + c * ko2 + x * kernel_order + y];
                         }
                     }
                 }
