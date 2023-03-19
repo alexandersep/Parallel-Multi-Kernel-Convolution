@@ -40,6 +40,15 @@ Version 1.1 : Fixed bug in code to create 4d matrix
 #include <stdint.h>
 #include <x86intrin.h>
 
+/* Source: https://stackoverflow.com/questions/3219393/stdlib-and-colored-output-in-c */
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+#define ANSI_COLOR_YELLOW   "\x1b[33m"
+#define ANSI_COLOR_BLUE     "\x1b[34m"
+#define ANSI_COLOR_CYAN     "\x1b[36m"
+#define ANSI_COLOR_MAGENTA  "\x1b[35m"
+#define ANSI_COLOR_RESET    "\x1b[0m"
+
 /* the following two definitions of DEBUGGING control whether or not
    debugging information is written out. To put the program into
    debugging mode, uncomment the following line: */
@@ -405,7 +414,8 @@ int main(int argc, char ** argv)
     gettimeofday(&stop_time, NULL);
     mul_time_david = (stop_time.tv_sec - start_time.tv_sec) * 1000000L +
         (stop_time.tv_usec - start_time.tv_usec);
-    printf("David conv time: %lld microseconds\n", mul_time_david);
+    printf(ANSI_COLOR_CYAN "David conv time: ");
+    printf(ANSI_COLOR_YELLOW "%lld microseconds\n", mul_time_david);
 
     /* record starting time of student's code*/
     gettimeofday(&start_time, NULL);
@@ -418,10 +428,17 @@ int main(int argc, char ** argv)
     gettimeofday(&stop_time, NULL);
     mul_time_student = (stop_time.tv_sec - start_time.tv_sec) * 1000000L +
         (stop_time.tv_usec - start_time.tv_usec);
-    printf("Student conv time: %lld microseconds\n", mul_time_student);
+    printf(ANSI_COLOR_BLUE "Student conv time: ");
+    printf(ANSI_COLOR_YELLOW "%lld microseconds\n", mul_time_student);
 
     double percent = ( (mul_time_david - mul_time_student) / (double) mul_time_david) * 100.0;
-    printf("The total speed up time was %.2f percent and %lld microseconds less\n", percent, mul_time_david - mul_time_student);
+    printf(ANSI_COLOR_RESET "The ");
+    printf(ANSI_COLOR_GREEN "total speed up time ");
+    printf(ANSI_COLOR_RESET "was ");
+    printf(ANSI_COLOR_MAGENTA "%.2f%% ", percent);
+    printf(ANSI_COLOR_RESET "and ");
+    printf(ANSI_COLOR_YELLOW "%lld microseconds ", mul_time_david - mul_time_student);
+    printf(ANSI_COLOR_RESET "less\n");
 
     DEBUGGING(write_out(output, nkernels, width, height));
 
