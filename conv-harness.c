@@ -76,6 +76,7 @@ void write_out(int16_t *** a, int dim0, int dim1, int dim2)
 
 
 /* create new empty 4d float matrix */
+// dim0 = 1, dim1 = width+kernel_order, dim2 = height+kernel_order, dim3 = nchannels 
 float **** new_empty_4d_matrix_float(int dim0, int dim1, int dim2, int dim3)
 {
     float **** result = malloc(dim0 * sizeof(float***));
@@ -113,12 +114,14 @@ float *** new_empty_3d_matrix_float(int dim0, int dim1, int dim2)
 }
 
 /* create new empty 4d int16_t matrix */
+// dim0 = 1, dim1 = nchannels, dim2 = width, dim3 = height
+// dim0 = nkernels, dim1 = nchannels, dim2 = kernel_order, dim3 = kernel_order
 int16_t **** new_empty_4d_matrix_int16(int dim0, int dim1, int dim2, int dim3)
 {
-    int16_t **** result = malloc(dim0 * sizeof(int16_t***));
-    int16_t *** mat1 = malloc(dim0 * dim1 * sizeof(int16_t**));
-    int16_t ** mat2 = malloc(dim0 * dim1 * dim2 * sizeof(int16_t*));
-    int16_t * mat3 = malloc(dim0 * dim1 * dim2 *dim3 * sizeof(int16_t));
+    int16_t **** result = malloc(dim0 * sizeof(int16_t***));        //1
+    int16_t *** mat1 = malloc(dim0 * dim1 * sizeof(int16_t**));     // 1 * nchannels
+    int16_t ** mat2 = malloc(dim0 * dim1 * dim2 * sizeof(int16_t*)); // 1 * nchannels * width
+    int16_t * mat3 = malloc(dim0 * dim1 * dim2 *dim3 * sizeof(int16_t)); //1 * nchannels * width * height
     int i, j, k;
 
 
@@ -291,11 +294,16 @@ void check_result(float *** result, float *** control,
     }
 
     if ( sum_abs_diff > EPSILON ) {
-        fprintf(stderr, "WARNING: sum of absolute differences (%f) > EPSILON (%f)\n",
-                sum_abs_diff, EPSILON);
+        fprintf(stderr, ANSI_COLOR_RED "WARNING: ");
+        fprintf(stderr, ANSI_COLOR_RESET "sum of absolute differences ");
+        fprintf(stderr, ANSI_COLOR_RED "(%f) ", sum_abs_diff);
+        fprintf(stderr, ANSI_COLOR_RESET "> EPSILON (%f)\n", EPSILON);
     }
     else {
-        printf("COMMENT: sum of absolute differences (%f)  within acceptable range (%f)\n", sum_abs_diff, EPSILON);
+        printf(ANSI_COLOR_GREEN "COMMENT: ");
+        printf(ANSI_COLOR_RESET "sum of absolute differences ");
+        printf(ANSI_COLOR_GREEN "(%f) ", sum_abs_diff);
+        printf(ANSI_COLOR_RESET "within acceptable range (%f)\n", EPSILON);
     }
 }
 
@@ -336,24 +344,38 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
         int width, int height, int nchannels, int nkernels,
         int kernel_order)
 {
-    // this call here is just dummy code that calls the slow, simple, correct version.
-    // insert your own code instead
-    //multichannel_conv(image, kernels, output, width,
-    //                  height, nchannels, nkernels, kernel_order);
+
     int h, w, x, y, c, m;
+    float * image_1d = **image;
+    int16_t * kernel = ***kernels;
+    int ko2 = kernel_order * kernel_order;
+    int width_offset = (height+kernel_order) * nchannels;
+    int kernel_offset = nchannels * ko2;
+    //int nchannels_pow = (31 - __builtin_clz(nchannels));
 
     for ( m = 0; m < nkernels; m++ ) {
-        for ( h = 0; h < height; h++ ) {
-            for ( w = 0; w < width; w++ ) {
+        for ( w = 0; w < width; w++ ) {
+            for ( h = 0; h < height; h++ ) {
                 double sum = 0.0;
-                for ( c = 0; c < nchannels; c++) {
-                    for ( x = 0; x < kernel_order; x++) {
-                        for ( y = 0; y < kernel_order; y++) {
-                            sum += image[w+x][h+y][c] * kernels[m][c][x][y];
+                for ( x = 0; x < kernel_order; x++) {
+                    for ( y = 0; y < kernel_order; y++) {
+                        for ( c = 0; c < nchannels; c+=8) {
+
+                            int image_offset = (w+x) * width_offset + ((h+y) * nchannels) + c;
+                            int kernel_total_offset = m * kernel_offset + x * kernel_order + y + c * ko2;
+                            
+                            sum += image_1d[image_offset] * kernel[kernel_total_offset];
+                            sum += image_1d[image_offset + 1] * kernel[kernel_total_offset + ko2 * 1];
+                            sum += image_1d[image_offset + 2] * kernel[kernel_total_offset + ko2 * 2];
+                            sum += image_1d[image_offset + 3] * kernel[kernel_total_offset + ko2 * 3];
+                            sum += image_1d[image_offset + 4] * kernel[kernel_total_offset + ko2 * 4];
+                            sum += image_1d[image_offset + 5] * kernel[kernel_total_offset + ko2 * 5];
+                            sum += image_1d[image_offset + 6] * kernel[kernel_total_offset + ko2 * 6];
+                            sum += image_1d[image_offset + 7] * kernel[kernel_total_offset + ko2 * 7];
                         }
                     }
-                    output[m][w][h] = (float) sum;
                 }
+                output[m][w][h] = (float) sum;
             }
         }
     }
@@ -448,3 +470,4 @@ int main(int argc, char ** argv)
 
     return 0;
 }
+
