@@ -76,7 +76,6 @@ void write_out(int16_t *** a, int dim0, int dim1, int dim2)
 
 
 /* create new empty 4d float matrix */
-// dim0 = 1, dim1 = width+kernel_order, dim2 = height+kernel_order, dim3 = nchannels 
 float **** new_empty_4d_matrix_float(int dim0, int dim1, int dim2, int dim3)
 {
     float **** result = malloc(dim0 * sizeof(float***));
