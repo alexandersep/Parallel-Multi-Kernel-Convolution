@@ -116,7 +116,7 @@ float *** new_empty_3d_matrix_float(int dim0, int dim1, int dim2)
 /* create new empty 4d int16_t matrix */
 int16_t **** new_empty_4d_matrix_int16(int dim0, int dim1, int dim2, int dim3)
 {
-    int16_t **** result = malloc(dim0 * sizeof(int16_t***)); 
+    int16_t **** result = malloc(dim0 * sizeof(int16_t***));
     int16_t *** mat1 = malloc(dim0 * dim1 * sizeof(int16_t**));
     int16_t ** mat2 = malloc(dim0 * dim1 * dim2 * sizeof(int16_t*));
     int16_t * mat3 = malloc(dim0 * dim1 * dim2 *dim3 * sizeof(int16_t));
