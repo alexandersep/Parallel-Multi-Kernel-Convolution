@@ -12,7 +12,7 @@ CFILES=conv-harness.c
 CFLAGS=-O3 -msse4 -Wall -Werror -fopenmp -pthread -lm
 
 # Default command testing on
-COMMAND=100 100 5 5 5
+COMMAND=100 100 5 32 32
 
 # Name of Executables
 EXEC=conv
