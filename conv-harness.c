@@ -353,15 +353,15 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
         for ( w = 0; w < width; w++ ) {
             for ( h = 0; h < height; h++ ) {
                 double sum = 0.0;
-                for ( c = 0; c < nchannels; c++) {
-                    for ( x = 0; x < kernel_order; x++) {
-                        for ( y = 0; y < kernel_order; y++) {
-                            //printf("%p vs %p\n", &kernels[m][c][x][y], &kernel[m * nchannels * kernel_order * kernel_order + c * kernel_order * kernel_order + x * kernel_order + y]);
+                for ( x = 0; x < kernel_order; x++) {
+                    for ( y = 0; y < kernel_order; y++) {
+                        for ( c = 0; c < nchannels; c++) {
+                        //printf("%p vs %p\n", &kernels[m][c][x][y], &kernel[m * nchannels * kernel_order * kernel_order + c * kernel_order * kernel_order + x * kernel_order + y]);
                             sum += image_1d[(w+x) * width_offset + ((h+y) * (nchannels)) + c] * kernel[m * kernel_offset + c * ko2 + x * kernel_order + y];
                         }
                     }
-                    output[m][w][h] = (float) sum;
                 }
+                output[m][w][h] = (float) sum;
             }
         }
     }
