@@ -1,9 +1,7 @@
 # Ignore Executable files generated from Makefile
 
 # Linux Executables
-conv-openmp
-conv-pthread
+conv
 
 # Windows Executables
-conv-openmp.exe
-conv-pthread.exe
+conv.exe
