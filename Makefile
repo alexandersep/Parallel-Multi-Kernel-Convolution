@@ -30,9 +30,9 @@ endif
 # Default Executable when run with "make" 
 .DEFAULT_GOAL: $(EXEC)
 
-# Openmp command
+# compile command with silence
 $(EXEC): $(CFILES) 
-	$(CC) -o $@ $(CFILES) $(CFLAGS)
+	@$(CC) -o $@ $(CFILES) $(CFLAGS)
 
 all: $(EXEC)
 

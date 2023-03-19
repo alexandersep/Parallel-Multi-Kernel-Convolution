@@ -294,11 +294,16 @@ void check_result(float *** result, float *** control,
     }
 
     if ( sum_abs_diff > EPSILON ) {
-        fprintf(stderr, "WARNING: sum of absolute differences (%f) > EPSILON (%f)\n",
-                sum_abs_diff, EPSILON);
+        fprintf(stderr, ANSI_COLOR_RED "WARNING: ");
+        fprintf(stderr, ANSI_COLOR_RESET "sum of absolute differences ");
+        fprintf(stderr, ANSI_COLOR_RED "(%f) ", sum_abs_diff);
+        fprintf(stderr, ANSI_COLOR_RESET "> EPSILON (%f)\n", EPSILON);
     }
     else {
-        printf("COMMENT: sum of absolute differences (%f)  within acceptable range (%f)\n", sum_abs_diff, EPSILON);
+        printf(ANSI_COLOR_GREEN "COMMENT: ");
+        printf(ANSI_COLOR_RESET "sum of absolute differences ");
+        printf(ANSI_COLOR_GREEN "(%f) ", sum_abs_diff);
+        printf(ANSI_COLOR_RESET "within acceptable range (%f)\n", EPSILON);
     }
 }
 
