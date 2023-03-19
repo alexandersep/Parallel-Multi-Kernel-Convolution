@@ -358,15 +358,15 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
 
                             int image_offset = (w+x) * width_offset + ((h+y) * nchannels) + c;
                             int kernel_total_offset = m * kernel_offset + x * kernel_order + y + c * ko2;
-                            
-                            sum += image_1d[image_offset] * kernel[kernel_total_offset];
-                            sum += image_1d[image_offset + 1] * kernel[kernel_total_offset + ko2 * 1];
-                            sum += image_1d[image_offset + 2] * kernel[kernel_total_offset + ko2 * 2];
-                            sum += image_1d[image_offset + 3] * kernel[kernel_total_offset + ko2 * 3];
-                            sum += image_1d[image_offset + 4] * kernel[kernel_total_offset + ko2 * 4];
-                            sum += image_1d[image_offset + 5] * kernel[kernel_total_offset + ko2 * 5];
-                            sum += image_1d[image_offset + 6] * kernel[kernel_total_offset + ko2 * 6];
-                            sum += image_1d[image_offset + 7] * kernel[kernel_total_offset + ko2 * 7];
+
+                            sum += image_1d[image_offset++] * kernel[kernel_total_offset];
+                            sum += image_1d[image_offset++] * kernel[kernel_total_offset + ko2 * 1];
+                            sum += image_1d[image_offset++] * kernel[kernel_total_offset + ko2 * 2];
+                            sum += image_1d[image_offset++] * kernel[kernel_total_offset + ko2 * 3];
+                            sum += image_1d[image_offset++] * kernel[kernel_total_offset + ko2 * 4];
+                            sum += image_1d[image_offset++] * kernel[kernel_total_offset + ko2 * 5];
+                            sum += image_1d[image_offset++] * kernel[kernel_total_offset + ko2 * 6];
+                            sum += image_1d[image_offset++] * kernel[kernel_total_offset + ko2 * 7];
                         }
                     }
                 }
