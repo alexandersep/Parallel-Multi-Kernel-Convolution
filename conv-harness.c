@@ -347,9 +347,10 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
             for ( h = 0; h < height; h++ ) {
                 double sum = 0.0;
                 for ( c = 0; c < nchannels; c++) {
+                    int16_t * kernel = kernels[m][c][0];
                     for ( x = 0; x < kernel_order; x++) {
                         for ( y = 0; y < kernel_order; y++) {
-                            sum += image[w+x][h+y][c] * kernels[m][c][x][y];
+                            sum += image[w+x][h+y][c] * kernel[x * kernel_order + y];
                         }
                     }
                     output[m][w][h] = (float) sum;
