@@ -12,6 +12,7 @@ CFILES=conv-harness.c
 CFLAGS=-O3 -msse4 -Wall -Werror -fopenmp -pthread -lm
 
 # Default command testing on
+# width, height, kernel order, nchannels pow of 2, nkernels pow of 2 
 COMMAND=100 100 5 32 32
 
 # Name of Executables
