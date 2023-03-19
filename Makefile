@@ -9,7 +9,7 @@ CC=gcc
 CFILES=conv-harness.c
 
 # C Flags
-CFLAGS=-O3 -msse4 -Wall -Werror -fopenmp -pthread
+CFLAGS=-O3 -msse4 -Wall -Werror -fopenmp -pthread -lm
 
 # Default command testing on
 COMMAND=100 100 5 5 5

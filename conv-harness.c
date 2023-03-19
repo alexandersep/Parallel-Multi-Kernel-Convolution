@@ -76,6 +76,7 @@ void write_out(int16_t *** a, int dim0, int dim1, int dim2)
 
 
 /* create new empty 4d float matrix */
+// dim0 = 1, dim1 = width+kernel_order, dim2 = height+kernel_order, dim3 = nchannels 
 float **** new_empty_4d_matrix_float(int dim0, int dim1, int dim2, int dim3)
 {
     float **** result = malloc(dim0 * sizeof(float***));
@@ -113,12 +114,14 @@ float *** new_empty_3d_matrix_float(int dim0, int dim1, int dim2)
 }
 
 /* create new empty 4d int16_t matrix */
+// dim0 = 1, dim1 = nchannels, dim2 = width, dim3 = height
+// dim0 = nkernels, dim1 = nchannels, dim2 = kernel_order, dim3 = kernel_order
 int16_t **** new_empty_4d_matrix_int16(int dim0, int dim1, int dim2, int dim3)
 {
-    int16_t **** result = malloc(dim0 * sizeof(int16_t***));
-    int16_t *** mat1 = malloc(dim0 * dim1 * sizeof(int16_t**));
-    int16_t ** mat2 = malloc(dim0 * dim1 * dim2 * sizeof(int16_t*));
-    int16_t * mat3 = malloc(dim0 * dim1 * dim2 *dim3 * sizeof(int16_t));
+    int16_t **** result = malloc(dim0 * sizeof(int16_t***));        //1
+    int16_t *** mat1 = malloc(dim0 * dim1 * sizeof(int16_t**));     // 1 * nchannels
+    int16_t ** mat2 = malloc(dim0 * dim1 * dim2 * sizeof(int16_t*)); // 1 * nchannels * width
+    int16_t * mat3 = malloc(dim0 * dim1 * dim2 *dim3 * sizeof(int16_t)); //1 * nchannels * width * height
     int i, j, k;
 
 
@@ -341,16 +344,20 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
     //multichannel_conv(image, kernels, output, width,
     //                  height, nchannels, nkernels, kernel_order);
     int h, w, x, y, c, m;
-
+    float * image_1d = **image;
+    int16_t * kernel = ***kernels;
+    int ko2 = kernel_order * kernel_order;
+    int width_offset = (height+kernel_order) * nchannels;
+    int kernel_offset = nchannels * ko2;
     for ( m = 0; m < nkernels; m++ ) {
         for ( w = 0; w < width; w++ ) {
             for ( h = 0; h < height; h++ ) {
                 double sum = 0.0;
                 for ( c = 0; c < nchannels; c++) {
-                    int16_t * kernel = kernels[m][c][0];
                     for ( x = 0; x < kernel_order; x++) {
                         for ( y = 0; y < kernel_order; y++) {
-                            sum += image[w+x][h+y][c] * kernel[x * kernel_order + y];
+                            //printf("%p vs %p\n", &kernels[m][c][x][y], &kernel[m * nchannels * kernel_order * kernel_order + c * kernel_order * kernel_order + x * kernel_order + y]);
+                            sum += image_1d[(w+x) * width_offset + ((h+y) * (nchannels)) + c] * kernel[m * kernel_offset + c * ko2 + x * kernel_order + y];
                         }
                     }
                     output[m][w][h] = (float) sum;
