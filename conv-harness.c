@@ -343,8 +343,8 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
     int h, w, x, y, c, m;
 
     for ( m = 0; m < nkernels; m++ ) {
-        for ( h = 0; h < height; h++ ) {
-            for ( w = 0; w < width; w++ ) {
+        for ( w = 0; w < width; w++ ) {
+            for ( h = 0; h < height; h++ ) {
                 double sum = 0.0;
                 for ( c = 0; c < nchannels; c++) {
                     for ( x = 0; x < kernel_order; x++) {
