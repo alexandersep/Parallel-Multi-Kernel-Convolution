@@ -344,38 +344,24 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
         int width, int height, int nchannels, int nkernels,
         int kernel_order)
 {
-
+    // this call here is just dummy code that calls the slow, simple, correct version.
+    // insert your own code instead
+    //multichannel_conv(image, kernels, output, width,
+    //                  height, nchannels, nkernels, kernel_order);
     int h, w, x, y, c, m;
-    float * image_1d = **image;
-    int16_t * kernel = ***kernels;
-    int ko2 = kernel_order * kernel_order;
-    int width_offset = (height+kernel_order) * nchannels;
-    int kernel_offset = nchannels * ko2;
-    //int nchannels_pow = (31 - __builtin_clz(nchannels));
 
     for ( m = 0; m < nkernels; m++ ) {
-        for ( w = 0; w < width; w++ ) {
-            for ( h = 0; h < height; h++ ) {
+        for ( h = 0; h < height; h++ ) {
+            for ( w = 0; w < width; w++ ) {
                 double sum = 0.0;
-                for ( x = 0; x < kernel_order; x++) {
-                    for ( y = 0; y < kernel_order; y++) {
-                        for ( c = 0; c < nchannels; c+=8) {
-
-                            int image_offset = (w+x) * width_offset + ((h+y) * nchannels) + c;
-                            int kernel_total_offset = m * kernel_offset + x * kernel_order + y + c * ko2;
-                            
-                            sum += image_1d[image_offset] * kernel[kernel_total_offset];
-                            sum += image_1d[image_offset + 1] * kernel[kernel_total_offset + ko2 * 1];
-                            sum += image_1d[image_offset + 2] * kernel[kernel_total_offset + ko2 * 2];
-                            sum += image_1d[image_offset + 3] * kernel[kernel_total_offset + ko2 * 3];
-                            sum += image_1d[image_offset + 4] * kernel[kernel_total_offset + ko2 * 4];
-                            sum += image_1d[image_offset + 5] * kernel[kernel_total_offset + ko2 * 5];
-                            sum += image_1d[image_offset + 6] * kernel[kernel_total_offset + ko2 * 6];
-                            sum += image_1d[image_offset + 7] * kernel[kernel_total_offset + ko2 * 7];
+                for ( c = 0; c < nchannels; c++) {
+                    for ( x = 0; x < kernel_order; x++) {
+                        for ( y = 0; y < kernel_order; y++) {
+                            sum += image[w+x][h+y][c] * kernels[m][c][x][y];
                         }
                     }
+                    output[m][w][h] = (float) sum;
                 }
-                output[m][w][h] = (float) sum;
             }
         }
     }
@@ -470,4 +456,3 @@ int main(int argc, char ** argv)
 
     return 0;
 }
-
