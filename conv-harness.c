@@ -358,9 +358,11 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
             for ( h = 0; h < height; h++ ) {
                 double sum = 0.0;
                 for ( x = 0; x < kernel_order; x++ ) {
+                    int image_offset_precalc = (w+x) * width_offset;
+                    int kernel_total_offset_precalc = m * kernel_offset + x * kernel_order;
                     for ( y = 0; y < kernel_order; y++ ) {
-                        int image_offset = (w+x) * width_offset + ((h+y) * nchannels);
-                        int kernel_total_offset = m * kernel_offset + x * kernel_order + y;
+                        int image_offset = image_offset_precalc + (h+y) * nchannels;
+                        int kernel_total_offset = kernel_total_offset_precalc + y;
                         for ( c = 0; c < nchannels; c+=8 ) {
 
                             sum += image_1d[image_offset++] * kernel[kernel_total_offset];
