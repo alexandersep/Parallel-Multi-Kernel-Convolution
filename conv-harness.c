@@ -436,8 +436,6 @@ int main(int argc, char ** argv)
     gettimeofday(&stop_time, NULL);
     mul_time_david = (stop_time.tv_sec - start_time.tv_sec) * 1000000L +
         (stop_time.tv_usec - start_time.tv_usec);
-    printf(ANSI_COLOR_CYAN "David conv time: ");
-    printf(ANSI_COLOR_YELLOW "%lld microseconds\n", mul_time_david);
 
     /* record starting time of student's code*/
     gettimeofday(&start_time, NULL);
@@ -450,6 +448,9 @@ int main(int argc, char ** argv)
     gettimeofday(&stop_time, NULL);
     mul_time_student = (stop_time.tv_sec - start_time.tv_sec) * 1000000L +
         (stop_time.tv_usec - start_time.tv_usec);
+      
+    printf(ANSI_COLOR_CYAN "David conv time: ");
+    printf(ANSI_COLOR_YELLOW "%lld microseconds\n", mul_time_david);
     printf(ANSI_COLOR_BLUE "Student conv time: ");
     printf(ANSI_COLOR_YELLOW "%lld microseconds\n", mul_time_student);
 
