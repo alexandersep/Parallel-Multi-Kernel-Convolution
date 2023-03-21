@@ -351,22 +351,28 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
     int ko2 = kernel_order * kernel_order;
     int width_offset = (height+kernel_order) * nchannels;
     int kernel_offset = nchannels * ko2;
-    //int nchannels_pow = (31 - __builtin_clz(nchannels));
+    int kernel_offset_increase = ko2 << 3;
+    int image_offset_precalc;
+    int kernel_total_offset_precalc;
+    int image_offset;
+    double sum;
+    int kernel_total_offset;
 
+    #pragma omp parallel for
     for ( m = 0; m < nkernels; m++ ) {
         for ( w = 0; w < width; w++ ) {
             for ( h = 0; h < height; h++ ) {
-                double sum = 0.0;
+                sum = 0.0;
                 for ( x = 0; x < kernel_order; x++ ) {
-                    int image_offset_precalc = (w+x) * width_offset;
-                    int kernel_total_offset_precalc = m * kernel_offset + x * kernel_order;
+                    image_offset_precalc = (w+x) * width_offset;
+                    kernel_total_offset_precalc = m * kernel_offset + x * kernel_order;
                     for ( y = 0; y < kernel_order; y++ ) {
-                        int image_offset = image_offset_precalc + (h+y) * nchannels;
-                        int kernel_total_offset = kernel_total_offset_precalc + y;
+                        image_offset = image_offset_precalc + (h+y) * nchannels;
+                        kernel_total_offset = kernel_total_offset_precalc + y;
                         for ( c = 0; c < nchannels; c+=8 ) {
 
                             sum += image_1d[image_offset++] * kernel[kernel_total_offset];
-                            sum += image_1d[image_offset++] * kernel[kernel_total_offset + ko2 * 1];
+                            sum += image_1d[image_offset++] * kernel[kernel_total_offset + ko2];
                             sum += image_1d[image_offset++] * kernel[kernel_total_offset + ko2 * 2];
                             sum += image_1d[image_offset++] * kernel[kernel_total_offset + ko2 * 3];
                             sum += image_1d[image_offset++] * kernel[kernel_total_offset + ko2 * 4];
@@ -374,7 +380,7 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
                             sum += image_1d[image_offset++] * kernel[kernel_total_offset + ko2 * 6];
                             sum += image_1d[image_offset++] * kernel[kernel_total_offset + ko2 * 7];
 
-                            kernel_total_offset += ko2 << 3;
+                            kernel_total_offset += kernel_offset_increase;
                         }
                     }
                 }
