@@ -355,10 +355,10 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
     int image_offset_precalc;
     int kernel_total_offset_precalc;
     int image_offset;
-    double sum;
+    //double sum;
     int kernel_total_offset;
-    int16_t * t_kernel = malloc(sizeof(int16_t) * nchannels * kernel_order * kernel_order * nkernels);
-    
+    double * t_kernel = malloc(sizeof(double) * nchannels * kernel_order * kernel_order * nkernels);
+
     // VERY BAD TRANSPOSE ALGORITHM
     // USE AT OWN RISK
     // MIGHT CAUSE YOUR CAT TO RUN AWAY
@@ -373,45 +373,46 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
             c_times_ko2 = c * ko2;
             for(int x = 0; x < kernel_order; x++){
                 x_times_kernel_order = x * kernel_order;
-                kernel_total_offset_precalc = m_times_kernel_offset + x_times_kernel_order + c_times_ko2; 
+                kernel_total_offset_precalc = m_times_kernel_offset + x_times_kernel_order + c_times_ko2;
                 for(int y = 0; y < kernel_order; y++){
-                    t_kernel[m_times_kernel_offset + x_times_kernel_order * nchannels + y * nchannels + c] = kernel[kernel_total_offset_precalc + y];
+                    t_kernel[m_times_kernel_offset + x_times_kernel_order * nchannels + y * nchannels + c] = (double) kernel[kernel_total_offset_precalc + y];
                 }
             }
         }
     }
 
+    //float temp_sum[4];
     #pragma omp parallel for
     for ( m = 0; m < nkernels; m++ ) {
         for ( w = 0; w < width; w++ ) {
             for ( h = 0; h < height; h++ ) {
-                sum = 0.0;
+                __m128d v4sum = _mm_setzero_pd();
                 for ( x = 0; x < kernel_order; x++ ) {
                     image_offset_precalc = (w+x) * width_offset;
                     kernel_total_offset_precalc = m * kernel_offset + x * kernel_order * nchannels;
                     for ( y = 0; y < kernel_order; y++ ) {
                         image_offset = image_offset_precalc + (h+y) * nchannels;
-                        kernel_total_offset = kernel_total_offset_precalc + y * nchannels; 
-                        #pragma GCC unroll 4
-                        for ( c = 0; c < nchannels; c+=8 ) {
+                        kernel_total_offset = kernel_total_offset_precalc + y * nchannels;
+                        //#pragma GCC unroll 4
+                        for ( c = 0; c < nchannels; c+=2) {
 
-                            sum += image_1d[image_offset++] * t_kernel[kernel_total_offset++]; 
-                            sum += image_1d[image_offset++] * t_kernel[kernel_total_offset++];
-                            sum += image_1d[image_offset++] * t_kernel[kernel_total_offset++];
-                            sum += image_1d[image_offset++] * t_kernel[kernel_total_offset++];
-                            sum += image_1d[image_offset++] * t_kernel[kernel_total_offset++];
-                            sum += image_1d[image_offset++] * t_kernel[kernel_total_offset++];
-                            sum += image_1d[image_offset++] * t_kernel[kernel_total_offset++];
-                            sum += image_1d[image_offset++] * t_kernel[kernel_total_offset++];
+                            __m128 v4image_1d = _mm_loadu_ps(&image_1d[image_offset+c]);
+                            __m128d v4image_1d_pd = _mm_cvtps_pd(v4image_1d);
 
+                            __m128d v4t_kernel_pd = _mm_loadu_pd(&t_kernel[kernel_total_offset+c]);
+
+                            __m128d product = _mm_mul_pd(v4image_1d_pd, v4t_kernel_pd);
+                            v4sum = _mm_add_pd(v4sum, product);
                         }
                     }
                 }
-                output[m][w][h] = (float) sum;
+                v4sum = _mm_hadd_pd(v4sum, v4sum);
+                output[m][w][h] = (float) _mm_cvtsd_f64(v4sum);
             }
         }
     }
 }
+
 
 int main(int argc, char ** argv)
 {

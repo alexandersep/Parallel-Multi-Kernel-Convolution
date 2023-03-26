@@ -9,7 +9,10 @@ CC=gcc
 CFILES=conv-harness.c
 
 # C Flags
-CFLAGS=-O3 -msse4 -Wall -Werror -fopenmp -pthread -lm
+# CFLAGS=-O3 -msse4 -Wall -Werror -fopenmp -pthread -lm
+CFLAGS=-O3 -msse4 -Wall -fopenmp -pthread -lm
+# Debug Flags
+DEBUG_CFLAGS=-g -msse4 -Wall -Werror -fopenmp -pthread
 
 # Default command testing on
 # width, height, kernel order, nchannels pow of 2, nkernels pow of 2 
@@ -34,6 +37,11 @@ endif
 $(EXEC): $(CFILES) 
 	@$(CC) -o $@ $(CFILES) $(CFLAGS)
 
+.PHONY: force test
+test: $(EXEC) $(CFILES)
+	@$(CC) -o $(EXEC) $(CFILES) $(DEBUG_CFLAGS) 
+	@gdb --args ./$(EXEC) $(COMMAND)
+
 all: $(EXEC)
 
 # Run with specified flags
@@ -46,6 +54,7 @@ run: $(EXEC)
 	fi
 
 # Surpress echo of the command using "@" and remove all executables
+.PHONY: clean
 clean:
 	@[ -f ./$(EXEC) ] && rm $(EXEC) || true
 
