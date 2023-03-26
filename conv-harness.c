@@ -313,7 +313,7 @@ void multichannel_conv(float *** image, int16_t **** kernels,
         int nchannels, int nkernels, int kernel_order)
 {
     int h, w, x, y, c, m;
-
+    //#pragma omp parallel for
     for ( m = 0; m < nkernels; m++ ) {
         for ( w = 0; w < width; w++ ) {
             for ( h = 0; h < height; h++ ) {
@@ -357,7 +357,7 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
     int image_offset;
     double sum;
     int kernel_total_offset;
-
+    
     #pragma omp parallel for
     for ( m = 0; m < nkernels; m++ ) {
         for ( w = 0; w < width; w++ ) {
@@ -368,7 +368,8 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
                     kernel_total_offset_precalc = m * kernel_offset + x * kernel_order;
                     for ( y = 0; y < kernel_order; y++ ) {
                         image_offset = image_offset_precalc + (h+y) * nchannels;
-                        kernel_total_offset = kernel_total_offset_precalc + y;
+                        kernel_total_offset = kernel_total_offset_precalc + y; 
+                        #pragma GCC unroll 4
                         for ( c = 0; c < nchannels; c+=8 ) {
 
                             sum += image_1d[image_offset++] * kernel[kernel_total_offset];
@@ -463,11 +464,11 @@ int main(int argc, char ** argv)
     printf(ANSI_COLOR_BLUE "Student conv time: ");
     printf(ANSI_COLOR_YELLOW "%lld microseconds\n", mul_time_student);
 
-    double percent = ( (mul_time_david - mul_time_student) / (double) mul_time_david) * 100.0;
+    double percent = mul_time_david / (double) mul_time_student;
     printf(ANSI_COLOR_RESET "The ");
     printf(ANSI_COLOR_GREEN "total speed up time ");
     printf(ANSI_COLOR_RESET "was ");
-    printf(ANSI_COLOR_MAGENTA "%.2f%% ", percent);
+    printf(ANSI_COLOR_MAGENTA "%.2fx ", percent);
     printf(ANSI_COLOR_RESET "and ");
     printf(ANSI_COLOR_YELLOW "%lld microseconds ", mul_time_david - mul_time_student);
     printf(ANSI_COLOR_RESET "less\n");
