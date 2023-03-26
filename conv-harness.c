@@ -357,7 +357,22 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
     int image_offset;
     double sum;
     int kernel_total_offset;
+    int16_t * t_kernel = malloc(sizeof(int16_t) * nchannels * kernel_order * kernel_order * nkernels);
     
+    // VERY BAD TRANSPOSE ALGORITHM
+    // USE AT OWN RISK
+    // MIGHT CAUSE YOUR CAT TO RUN AWAY
+    for(int m = 0; m < nkernels; m++){
+        for(int c = 0; c < nchannels; c++){
+            for(int x = 0; x < kernel_order; x++){
+                kernel_total_offset_precalc = m * kernel_offset + x * kernel_order + c * ko2;
+                for(int y = 0; y < kernel_order; y++){
+                    t_kernel[m * kernel_offset + x * nchannels * kernel_order + y * nchannels + c] = kernel[kernel_total_offset_precalc + y];
+                }
+            }
+        }
+    }
+
     #pragma omp parallel for
     for ( m = 0; m < nkernels; m++ ) {
         for ( w = 0; w < width; w++ ) {
