@@ -362,12 +362,20 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
     // VERY BAD TRANSPOSE ALGORITHM
     // USE AT OWN RISK
     // MIGHT CAUSE YOUR CAT TO RUN AWAY
+    // Variables for storing previous calculations
+    int m_times_kernel_offset;
+    int c_times_ko2;
+    int x_times_kernel_order;
+    #pragma omp parallel for // maybe this will numb the pain
     for(int m = 0; m < nkernels; m++){
+        m_times_kernel_offset = m * kernel_offset;
         for(int c = 0; c < nchannels; c++){
+            c_times_ko2 = c * ko2;
             for(int x = 0; x < kernel_order; x++){
-                kernel_total_offset_precalc = m * kernel_offset + x * kernel_order + c * ko2;
+                x_times_kernel_order = x * kernel_order;
+                kernel_total_offset_precalc = m_times_kernel_offset + x_times_kernel_order + c_times_ko2; 
                 for(int y = 0; y < kernel_order; y++){
-                    t_kernel[m * kernel_offset + x * nchannels * kernel_order + y * nchannels + c] = kernel[kernel_total_offset_precalc + y];
+                    t_kernel[m_times_kernel_offset + x_times_kernel_order * nchannels + y * nchannels + c] = kernel[kernel_total_offset_precalc + y];
                 }
             }
         }
@@ -387,7 +395,7 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
                         #pragma GCC unroll 4
                         for ( c = 0; c < nchannels; c+=8 ) {
 
-                            sum += image_1d[image_offset++] * kernel[kernel_total_offset];
+                            sum += image_1d[image_offset++] * kernel[kernel_total_offset]; 
                             sum += image_1d[image_offset++] * kernel[kernel_total_offset + ko2];
                             sum += image_1d[image_offset++] * kernel[kernel_total_offset + ko2 * 2];
                             sum += image_1d[image_offset++] * kernel[kernel_total_offset + ko2 * 3];
