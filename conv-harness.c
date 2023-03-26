@@ -351,7 +351,7 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
     int ko2 = kernel_order * kernel_order;
     int width_offset = (height+kernel_order) * nchannels;
     int kernel_offset = nchannels * ko2;
-    int kernel_offset_increase = ko2 << 3;
+    //int kernel_offset_increase = ko2 << 3;
     int image_offset_precalc;
     int kernel_total_offset_precalc;
     int image_offset;
@@ -388,23 +388,22 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
                 sum = 0.0;
                 for ( x = 0; x < kernel_order; x++ ) {
                     image_offset_precalc = (w+x) * width_offset;
-                    kernel_total_offset_precalc = m * kernel_offset + x * kernel_order;
+                    kernel_total_offset_precalc = m * kernel_offset + x * kernel_order * nchannels;
                     for ( y = 0; y < kernel_order; y++ ) {
                         image_offset = image_offset_precalc + (h+y) * nchannels;
-                        kernel_total_offset = kernel_total_offset_precalc + y; 
+                        kernel_total_offset = kernel_total_offset_precalc + y * nchannels; 
                         #pragma GCC unroll 4
                         for ( c = 0; c < nchannels; c+=8 ) {
 
-                            sum += image_1d[image_offset++] * kernel[kernel_total_offset]; 
-                            sum += image_1d[image_offset++] * kernel[kernel_total_offset + ko2];
-                            sum += image_1d[image_offset++] * kernel[kernel_total_offset + ko2 * 2];
-                            sum += image_1d[image_offset++] * kernel[kernel_total_offset + ko2 * 3];
-                            sum += image_1d[image_offset++] * kernel[kernel_total_offset + ko2 * 4];
-                            sum += image_1d[image_offset++] * kernel[kernel_total_offset + ko2 * 5];
-                            sum += image_1d[image_offset++] * kernel[kernel_total_offset + ko2 * 6];
-                            sum += image_1d[image_offset++] * kernel[kernel_total_offset + ko2 * 7];
+                            sum += image_1d[image_offset++] * t_kernel[kernel_total_offset++]; 
+                            sum += image_1d[image_offset++] * t_kernel[kernel_total_offset++];
+                            sum += image_1d[image_offset++] * t_kernel[kernel_total_offset++];
+                            sum += image_1d[image_offset++] * t_kernel[kernel_total_offset++];
+                            sum += image_1d[image_offset++] * t_kernel[kernel_total_offset++];
+                            sum += image_1d[image_offset++] * t_kernel[kernel_total_offset++];
+                            sum += image_1d[image_offset++] * t_kernel[kernel_total_offset++];
+                            sum += image_1d[image_offset++] * t_kernel[kernel_total_offset++];
 
-                            kernel_total_offset += kernel_offset_increase;
                         }
                     }
                 }
