@@ -8,3 +8,9 @@ conv.exe
 
 # Ignore vscode directory
 .vscode/
+
+# Latex Output files
+*.aux  
+*.log  
+*.out  
+*.toc

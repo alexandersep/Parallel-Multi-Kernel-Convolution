@@ -40,7 +40,10 @@ Version 1.1 : Fixed bug in code to create 4d matrix
 #include <stdint.h>
 #include <x86intrin.h>
 
-/* Source: https://stackoverflow.com/questions/3219393/stdlib-and-colored-output-in-c */
+/* Source: 
+    https://stackoverflow.com/questions/3219393/stdlib-and-colored-output-in-c 
+    https://stackoverflow.com/questions/18749493/openmp-drastically-slows-down-for-loop/18763554#18763554
+*/
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
 #define ANSI_COLOR_YELLOW   "\x1b[33m"

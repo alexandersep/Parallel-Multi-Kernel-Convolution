@@ -9,8 +9,7 @@ CC=gcc
 CFILES=conv-harness.c
 
 # C Flags
-# CFLAGS=-O3 -msse4 -Wall -Werror -fopenmp -pthread -lm
-CFLAGS=-O3 -msse4 -Wall -fopenmp -pthread -lm
+CFLAGS=-O3 -msse4 -Wall -Werror -fopenmp -pthread -lm
 # Debug Flags
 DEBUG_CFLAGS=-g -msse4 -Wall -Werror -fopenmp -pthread
 
