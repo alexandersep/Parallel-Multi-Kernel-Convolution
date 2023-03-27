@@ -5,3 +5,6 @@ conv
 
 # Windows Executables
 conv.exe
+
+# Ignore vscode directory
+.vscode/

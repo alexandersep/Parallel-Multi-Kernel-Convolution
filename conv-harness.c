@@ -76,6 +76,7 @@ void write_out(int16_t *** a, int dim0, int dim1, int dim2)
 
 
 /* create new empty 4d float matrix */
+// dim0 = 1, dim1 = width+kernel_order, dim2 = height+kernel_order, dim3 = nchannels 
 float **** new_empty_4d_matrix_float(int dim0, int dim1, int dim2, int dim3)
 {
     float **** result = malloc(dim0 * sizeof(float***));
@@ -113,12 +114,14 @@ float *** new_empty_3d_matrix_float(int dim0, int dim1, int dim2)
 }
 
 /* create new empty 4d int16_t matrix */
+// dim0 = 1, dim1 = nchannels, dim2 = width, dim3 = height
+// dim0 = nkernels, dim1 = nchannels, dim2 = kernel_order, dim3 = kernel_order
 int16_t **** new_empty_4d_matrix_int16(int dim0, int dim1, int dim2, int dim3)
 {
-    int16_t **** result = malloc(dim0 * sizeof(int16_t***));
-    int16_t *** mat1 = malloc(dim0 * dim1 * sizeof(int16_t**));
-    int16_t ** mat2 = malloc(dim0 * dim1 * dim2 * sizeof(int16_t*));
-    int16_t * mat3 = malloc(dim0 * dim1 * dim2 *dim3 * sizeof(int16_t));
+    int16_t **** result = malloc(dim0 * sizeof(int16_t***));        //1
+    int16_t *** mat1 = malloc(dim0 * dim1 * sizeof(int16_t**));     // 1 * nchannels
+    int16_t ** mat2 = malloc(dim0 * dim1 * dim2 * sizeof(int16_t*)); // 1 * nchannels * width
+    int16_t * mat3 = malloc(dim0 * dim1 * dim2 *dim3 * sizeof(int16_t)); //1 * nchannels * width * height
     int i, j, k;
 
 
@@ -310,7 +313,7 @@ void multichannel_conv(float *** image, int16_t **** kernels,
         int nchannels, int nkernels, int kernel_order)
 {
     int h, w, x, y, c, m;
-
+    //#pragma omp parallel for
     for ( m = 0; m < nkernels; m++ ) {
         for ( w = 0; w < width; w++ ) {
             for ( h = 0; h < height; h++ ) {
@@ -341,27 +344,75 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
         int width, int height, int nchannels, int nkernels,
         int kernel_order)
 {
-    // this call here is just dummy code that calls the slow, simple, correct version.
-    // insert your own code instead
-    //multichannel_conv(image, kernels, output, width,
-    //                  height, nchannels, nkernels, kernel_order);
-    int h, w, x, y, c, m;
 
-    for ( m = 0; m < nkernels; m++ ) {
-        for ( h = 0; h < height; h++ ) {
-            for ( w = 0; w < width; w++ ) {
-                double sum = 0.0;
-                for ( c = 0; c < nchannels; c++) {
-                    for ( x = 0; x < kernel_order; x++) {
-                        for ( y = 0; y < kernel_order; y++) {
-                            sum += image[w+x][h+y][c] * kernels[m][c][x][y];
-                        }
-                    }
-                    output[m][w][h] = (float) sum;
+    //int h, w, x, y, c, m;
+    int y, x, c;
+    float * image_1d = **image;
+    int16_t * kernel = ***kernels;
+    int ko2 = kernel_order * kernel_order;
+    int width_offset = (height+kernel_order) * nchannels;
+    int kernel_offset = nchannels * ko2;
+    //int kernel_offset_increase = ko2 << 3;
+    int image_offset_precalc;
+    int kernel_total_offset_precalc;
+    int image_offset;
+    //double sum;
+    int kernel_total_offset;
+    double * t_kernel = malloc(sizeof(double) * nchannels * kernel_order * kernel_order * nkernels);
+
+    int m_times_kernel_offset;
+    int c_times_ko2;
+    int x_times_kernel_order;
+    int t_kernel_total_offset_precalc;
+    // VERY BAD TRANSPOSE ALGORITHM
+    // USE AT OWN RISK
+    // MIGHT CAUSE YOUR CAT TO RUN AWAY
+    // Variables for storing previous calculations
+
+    #pragma omp parallel for // maybe this will numb the pain
+    for(int n = 0; n < (nkernels*nchannels*kernel_order); n++){
+        int m = n/(nchannels*kernel_order);
+        int c = (n%(nchannels*kernel_order))/kernel_order; 
+        int x = (n%(nchannels*kernel_order))%kernel_order; 
+        m_times_kernel_offset = m * kernel_offset;
+        c_times_ko2 = c * ko2;
+        x_times_kernel_order = x * kernel_order;
+        kernel_total_offset_precalc = m_times_kernel_offset + x_times_kernel_order + c_times_ko2;
+        t_kernel_total_offset_precalc = m_times_kernel_offset + x_times_kernel_order * nchannels + c;
+        for(int y = 0; y < kernel_order; y++){
+            t_kernel[t_kernel_total_offset_precalc + y * nchannels] = (double) kernel[kernel_total_offset_precalc + y];
+        }
+    }
+    #pragma omp parallel for
+    for (int n = 0; n < (nkernels*width*height); n++) {
+        int m = n/(width*height);
+        int w = (n%(width*height))/height;
+        int h = (n%(width*height))%height;
+        m_times_kernel_offset = m * kernel_offset;
+        __m128d v4sum = _mm_setzero_pd();
+        for (x = 0; x < kernel_order; x++ ) {
+            image_offset_precalc = (w+x) * width_offset;
+            kernel_total_offset_precalc = m_times_kernel_offset + x * kernel_order * nchannels;
+            for ( y = 0; y < kernel_order; y++ ) {
+                image_offset = image_offset_precalc + (h+y) * nchannels;
+                kernel_total_offset = kernel_total_offset_precalc + y * nchannels;
+                #pragma GCC unroll 8
+                for ( c = 0; c < nchannels; c+=2) {
+
+                    __m128 v4image_1d = _mm_loadu_ps(image_1d+image_offset+c);
+                    __m128d v4image_1d_pd = _mm_cvtps_pd(v4image_1d);
+
+                    __m128d v4t_kernel_pd = _mm_loadu_pd(t_kernel+kernel_total_offset+c);
+
+                    __m128d product = _mm_mul_pd(v4image_1d_pd, v4t_kernel_pd);
+                    v4sum = _mm_add_pd(v4sum, product);
                 }
             }
         }
+        v4sum = _mm_hadd_pd(v4sum, v4sum);
+        output[m][w][h] = (float) _mm_cvtsd_f64(v4sum);
     }
+
 }
 
 int main(int argc, char ** argv)
@@ -419,8 +470,6 @@ int main(int argc, char ** argv)
     gettimeofday(&stop_time, NULL);
     mul_time_david = (stop_time.tv_sec - start_time.tv_sec) * 1000000L +
         (stop_time.tv_usec - start_time.tv_usec);
-    printf(ANSI_COLOR_CYAN "David conv time: ");
-    printf(ANSI_COLOR_YELLOW "%lld microseconds\n", mul_time_david);
 
     /* record starting time of student's code*/
     gettimeofday(&start_time, NULL);
@@ -433,14 +482,17 @@ int main(int argc, char ** argv)
     gettimeofday(&stop_time, NULL);
     mul_time_student = (stop_time.tv_sec - start_time.tv_sec) * 1000000L +
         (stop_time.tv_usec - start_time.tv_usec);
+      
+    printf(ANSI_COLOR_CYAN "David conv time: ");
+    printf(ANSI_COLOR_YELLOW "%lld microseconds\n", mul_time_david);
     printf(ANSI_COLOR_BLUE "Student conv time: ");
     printf(ANSI_COLOR_YELLOW "%lld microseconds\n", mul_time_student);
 
-    double percent = ( (mul_time_david - mul_time_student) / (double) mul_time_david) * 100.0;
+    double percent = mul_time_david / (double) mul_time_student;
     printf(ANSI_COLOR_RESET "The ");
     printf(ANSI_COLOR_GREEN "total speed up time ");
     printf(ANSI_COLOR_RESET "was ");
-    printf(ANSI_COLOR_MAGENTA "%.2f%% ", percent);
+    printf(ANSI_COLOR_MAGENTA "%.2fx ", percent);
     printf(ANSI_COLOR_RESET "and ");
     printf(ANSI_COLOR_YELLOW "%lld microseconds ", mul_time_david - mul_time_student);
     printf(ANSI_COLOR_RESET "less\n");
