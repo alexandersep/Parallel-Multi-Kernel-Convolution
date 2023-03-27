@@ -363,6 +363,7 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
     int m_times_kernel_offset;
     int c_times_ko2;
     int x_times_kernel_order;
+    int t_kernel_total_offset_precalc;
     // VERY BAD TRANSPOSE ALGORITHM
     // USE AT OWN RISK
     // MIGHT CAUSE YOUR CAT TO RUN AWAY
@@ -377,8 +378,9 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
         c_times_ko2 = c * ko2;
         x_times_kernel_order = x * kernel_order;
         kernel_total_offset_precalc = m_times_kernel_offset + x_times_kernel_order + c_times_ko2;
+        t_kernel_total_offset_precalc = m_times_kernel_offset + x_times_kernel_order * nchannels + c;
         for(int y = 0; y < kernel_order; y++){
-            t_kernel[m_times_kernel_offset + x_times_kernel_order * nchannels + y * nchannels + c] = (double) kernel[kernel_total_offset_precalc + y];
+            t_kernel[t_kernel_total_offset_precalc + y * nchannels] = (double) kernel[kernel_total_offset_precalc + y];
         }
     }
     #pragma omp parallel for
@@ -386,20 +388,21 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
         int m = n/(width*height);
         int w = (n%(width*height))/height;
         int h = (n%(width*height))%height;
+        m_times_kernel_offset = m * kernel_offset;
         __m128d v4sum = _mm_setzero_pd();
         for (x = 0; x < kernel_order; x++ ) {
             image_offset_precalc = (w+x) * width_offset;
-            kernel_total_offset_precalc = m * kernel_offset + x * kernel_order * nchannels;
+            kernel_total_offset_precalc = m_times_kernel_offset + x * kernel_order * nchannels;
             for ( y = 0; y < kernel_order; y++ ) {
                 image_offset = image_offset_precalc + (h+y) * nchannels;
                 kernel_total_offset = kernel_total_offset_precalc + y * nchannels;
                 #pragma GCC unroll 8
                 for ( c = 0; c < nchannels; c+=2) {
 
-                    __m128 v4image_1d = _mm_loadu_ps(&image_1d[image_offset+c]);
+                    __m128 v4image_1d = _mm_loadu_ps(image_1d+image_offset+c);
                     __m128d v4image_1d_pd = _mm_cvtps_pd(v4image_1d);
 
-                    __m128d v4t_kernel_pd = _mm_loadu_pd(&t_kernel[kernel_total_offset+c]);
+                    __m128d v4t_kernel_pd = _mm_loadu_pd(t_kernel+kernel_total_offset+c);
 
                     __m128d product = _mm_mul_pd(v4image_1d_pd, v4t_kernel_pd);
                     v4sum = _mm_add_pd(v4sum, product);
