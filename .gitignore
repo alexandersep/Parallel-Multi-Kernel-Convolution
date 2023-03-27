@@ -8,3 +8,6 @@ conv.exe
 
 # Ignore vscode directory
 .vscode/
+
+# Ignore disassembly
+*.asm

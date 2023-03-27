@@ -380,7 +380,8 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
         kernel_total_offset_precalc = m_times_kernel_offset + x_times_kernel_order + c_times_ko2;
         t_kernel_total_offset_precalc = m_times_kernel_offset + x_times_kernel_order * nchannels + c;
         for(int y = 0; y < kernel_order; y++){
-            t_kernel[t_kernel_total_offset_precalc + y * nchannels] = (double) kernel[kernel_total_offset_precalc + y];
+            t_kernel[t_kernel_total_offset_precalc] = (double) kernel[kernel_total_offset_precalc++];
+            t_kernel_total_offset_precalc += nchannels;
         }
     }
     #pragma omp parallel for
@@ -396,8 +397,8 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
             for ( y = 0; y < kernel_order; y++ ) {
                 image_offset = image_offset_precalc + (h+y) * nchannels;
                 kernel_total_offset = kernel_total_offset_precalc + y * nchannels;
-                #pragma GCC unroll 8
-                for ( c = 0; c < nchannels; c+=2) {
+                #pragma GCC unroll 16
+                for ( c = 0; c < nchannels; c+=2 ) {
 
                     __m128 v4image_1d = _mm_loadu_ps(image_1d+image_offset+c);
                     __m128d v4image_1d_pd = _mm_cvtps_pd(v4image_1d);
@@ -412,7 +413,6 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
         v4sum = _mm_hadd_pd(v4sum, v4sum);
         output[m][w][h] = (float) _mm_cvtsd_f64(v4sum);
     }
-
 }
 
 int main(int argc, char ** argv)
