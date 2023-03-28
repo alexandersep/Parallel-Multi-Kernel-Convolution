@@ -344,6 +344,8 @@ void student_conv(float *** restrict image, int16_t **** restrict kernels, float
 
     //int h, w, x, y, c, m;
     int y, x, c;
+    int width_times_height = width * height;
+    float * output1d = **output;
     float * image_1d = **image;
     int16_t * kernel = ***kernels;
     int ko2 = kernel_order * kernel_order;
@@ -386,6 +388,7 @@ void student_conv(float *** restrict image, int16_t **** restrict kernels, float
         int m = n/(width*height);
         int w = (n%(width*height))/height;
         int h = (n%(width*height))%height;
+        int output_offset = m * width_times_height + w * height + h;
         m_times_kernel_offset = m * kernel_offset;
         __m128d v4sum = _mm_setzero_pd();
         for (x = 0; x < kernel_order; x++ ) {
@@ -473,7 +476,7 @@ void student_conv(float *** restrict image, int16_t **** restrict kernels, float
             }
         }
         v4sum = _mm_hadd_pd(v4sum, v4sum); // add the two lanes together and put in lower lane
-        output[m][w][h] = (float) _mm_cvtsd_f64(v4sum); // extract lower double 
+        output1d[output_offset] = (float) _mm_cvtsd_f64(v4sum); // extract lower double 
     }
 }
 
