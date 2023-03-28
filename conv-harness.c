@@ -49,6 +49,11 @@ Version 1.1 : Fixed bug in code to create 4d matrix
 #define ANSI_COLOR_MAGENTA  "\x1b[35m"
 #define ANSI_COLOR_RESET    "\x1b[0m"
 
+
+/* Branch prediction USE THIS WITH CAUTION, THE Architecutre is probably better than us at prediction */
+#define LIKELY(x)    __builtin_expect (!!(x), 1)
+#define UNLIKELY(x)  __builtin_expect (!!(x), 0)
+
 /* the following two definitions of DEBUGGING control whether or not
    debugging information is written out. To put the program into
    debugging mode, uncomment the following line: */
@@ -331,16 +336,8 @@ void multichannel_conv(float *** image, int16_t **** kernels,
     }
 }
 
-static inline float hsum_ps_sse3(__m128 v4a) {
-    __m128 shuf = _mm_movehdup_ps(v4a);
-    __m128 sums = _mm_add_ps(v4a, shuf);
-    shuf        = _mm_movehl_ps(shuf, sums);
-    sums        = _mm_add_ss(sums, shuf);
-    return _mm_cvtss_f32(sums);
-}
-
 /* the fast version of matmul written by the student */
-void student_conv(float *** image, int16_t **** kernels, float *** output,
+void student_conv(float *** restrict image, int16_t **** restrict kernels, float *** restrict output,
         int width, int height, int nchannels, int nkernels,
         int kernel_order)
 {
@@ -358,7 +355,7 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
     int image_offset;
     //double sum;
     int kernel_total_offset;
-    double * t_kernel = malloc(sizeof(double) * nchannels * kernel_order * kernel_order * nkernels);
+    double * t_kernel = _mm_malloc(sizeof(double) * nchannels * kernel_order * kernel_order * nkernels, 16);
 
     int m_times_kernel_offset;
     int c_times_ko2;
@@ -384,8 +381,9 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
             t_kernel_total_offset_precalc += nchannels;
         }
     }
+
     #pragma omp parallel for
-    for (int n = 0; n < (nkernels*width*height); n++) {
+    for (int n = 0; n < nkernels*width*height; n++) {
         int m = n/(width*height);
         int w = (n%(width*height))/height;
         int h = (n%(width*height))%height;
@@ -397,15 +395,80 @@ void student_conv(float *** image, int16_t **** kernels, float *** output,
             for ( y = 0; y < kernel_order; y++ ) {
                 image_offset = image_offset_precalc + (h+y) * nchannels;
                 kernel_total_offset = kernel_total_offset_precalc + y * nchannels;
-                #pragma GCC unroll 16
                 for ( c = 0; c < nchannels; c+=2 ) {
-
+                    // t_kernel is aligned hence the load instead of loadu
+                    // cvtps convert float vector to double vector 4 -> 2 (lower) lanes
+                    // shuffle by moving 2 high values to take 2 low values spot
+                    // mul two double vectors, add them, and sum them up.
                     __m128 v4image_1d = _mm_loadu_ps(image_1d+image_offset+c);
                     __m128d v4image_1d_pd = _mm_cvtps_pd(v4image_1d);
 
-                    __m128d v4t_kernel_pd = _mm_loadu_pd(t_kernel+kernel_total_offset+c);
+                    __m128d v4t_kernel_pd = _mm_load_pd(t_kernel+kernel_total_offset+c);
 
                     __m128d product = _mm_mul_pd(v4image_1d_pd, v4t_kernel_pd);
+                    v4sum = _mm_add_pd(v4sum, product);
+
+                    c+=2;
+                    v4image_1d = _mm_shuffle_ps(v4image_1d, v4image_1d, _MM_SHUFFLE(0, 0, 3, 2));
+                    v4image_1d_pd = _mm_cvtps_pd(v4image_1d);
+
+                    v4t_kernel_pd = _mm_load_pd(t_kernel+kernel_total_offset+c);
+
+                    product = _mm_mul_pd(v4image_1d_pd, v4t_kernel_pd);
+                    v4sum = _mm_add_pd(v4sum, product);
+
+                    c+=2;
+                    v4image_1d = _mm_loadu_ps(image_1d+image_offset+c);
+                    v4image_1d_pd = _mm_cvtps_pd(v4image_1d);
+
+                    v4t_kernel_pd = _mm_load_pd(t_kernel+kernel_total_offset+c);
+
+                    product = _mm_mul_pd(v4image_1d_pd, v4t_kernel_pd);
+                    v4sum = _mm_add_pd(v4sum, product);
+
+                    c+=2;
+                    v4image_1d = _mm_shuffle_ps(v4image_1d, v4image_1d, _MM_SHUFFLE(0, 0, 3, 2));
+                    v4image_1d_pd = _mm_cvtps_pd(v4image_1d);
+
+                    v4t_kernel_pd = _mm_load_pd(t_kernel+kernel_total_offset+c);
+
+                    product = _mm_mul_pd(v4image_1d_pd, v4t_kernel_pd);
+                    v4sum = _mm_add_pd(v4sum, product);
+
+                    c+=2;
+                    v4image_1d = _mm_loadu_ps(image_1d+image_offset+c);
+                    v4image_1d_pd = _mm_cvtps_pd(v4image_1d);
+
+                    v4t_kernel_pd = _mm_load_pd(t_kernel+kernel_total_offset+c);
+
+                    product = _mm_mul_pd(v4image_1d_pd, v4t_kernel_pd);
+                    v4sum = _mm_add_pd(v4sum, product);
+
+                    c+=2;
+                    v4image_1d = _mm_shuffle_ps(v4image_1d, v4image_1d, _MM_SHUFFLE(0, 0, 3, 2));
+                    v4image_1d_pd = _mm_cvtps_pd(v4image_1d);
+
+                    v4t_kernel_pd = _mm_load_pd(t_kernel+kernel_total_offset+c);
+
+                    product = _mm_mul_pd(v4image_1d_pd, v4t_kernel_pd);
+                    v4sum = _mm_add_pd(v4sum, product);
+
+                    c+=2;
+                    v4image_1d = _mm_loadu_ps(image_1d+image_offset+c);
+                    v4image_1d_pd = _mm_cvtps_pd(v4image_1d);
+
+                    v4t_kernel_pd = _mm_load_pd(t_kernel+kernel_total_offset+c);
+
+                    product = _mm_mul_pd(v4image_1d_pd, v4t_kernel_pd);
+                    v4sum = _mm_add_pd(v4sum, product);
+
+                    c+=2;
+                    v4image_1d = _mm_shuffle_ps(v4image_1d, v4image_1d, _MM_SHUFFLE(0, 0, 3, 2));
+                    v4image_1d_pd = _mm_cvtps_pd(v4image_1d);
+
+                    v4t_kernel_pd = _mm_load_pd(t_kernel+kernel_total_offset+c);
+
+                    product = _mm_mul_pd(v4image_1d_pd, v4t_kernel_pd);
                     v4sum = _mm_add_pd(v4sum, product);
                 }
             }
