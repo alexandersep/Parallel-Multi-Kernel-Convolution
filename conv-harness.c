@@ -361,11 +361,10 @@ void student_conv(float *** restrict image, int16_t **** restrict kernels, float
     int c_times_ko2;
     int x_times_kernel_order;
     int t_kernel_total_offset_precalc;
+
     // VERY BAD TRANSPOSE ALGORITHM
     // USE AT OWN RISK
     // MIGHT CAUSE YOUR CAT TO RUN AWAY
-    // Variables for storing previous calculations
-
     #pragma omp parallel for // maybe this will numb the pain
     for(int n = 0; n < (nkernels*nchannels*kernel_order); n++){
         int m = n/(nchannels*kernel_order);
@@ -377,7 +376,7 @@ void student_conv(float *** restrict image, int16_t **** restrict kernels, float
         kernel_total_offset_precalc = m_times_kernel_offset + x_times_kernel_order + c_times_ko2;
         t_kernel_total_offset_precalc = m_times_kernel_offset + x_times_kernel_order * nchannels + c;
         for(int y = 0; y < kernel_order; y++){
-            t_kernel[t_kernel_total_offset_precalc] = (double) kernel[kernel_total_offset_precalc++];
+            t_kernel[t_kernel_total_offset_precalc] = (double) kernel[kernel_total_offset_precalc+y];
             t_kernel_total_offset_precalc += nchannels;
         }
     }
@@ -473,8 +472,8 @@ void student_conv(float *** restrict image, int16_t **** restrict kernels, float
                 }
             }
         }
-        v4sum = _mm_hadd_pd(v4sum, v4sum);
-        output[m][w][h] = (float) _mm_cvtsd_f64(v4sum);
+        v4sum = _mm_hadd_pd(v4sum, v4sum); // add the two lanes together and put in lower lane
+        output[m][w][h] = (float) _mm_cvtsd_f64(v4sum); // extract lower double 
     }
 }
 
