@@ -15,7 +15,7 @@ DEBUG_CFLAGS=-g -msse4 -Wall -Werror -fopenmp
 
 # Default command testing on
 # width, height, kernel order, nchannels pow of 2, nkernels pow of 2 
- COMMAND=100 100 5 128 128 
+COMMAND=100 100 5 128 128 
 #COMMAND=32 32 7 64 64
 
 # Name of Executables
