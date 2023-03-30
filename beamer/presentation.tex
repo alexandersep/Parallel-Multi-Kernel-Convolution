@@ -285,12 +285,18 @@ output1d[m * width_times_height + w * height + h] =
 \end{frame}
 
 \begin{frame}[fragile]
-\frametitle{Final Step in Vectorisation}
-We must finally sum up, after finishing the kernel convolution \\
-We repeat for every nkernels again. \\
-Sum up using hadd\_pd, which adds two double vectors together \\
-Extract lower double using cvtsd function. \\
-\includegraphics[width=0.1\textwidth]{images/student-conv}
+\frametitle{Source Code}
+\includegraphics[width=0.65\textwidth]{images/student-conv-part1}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Continued: Source Code}
+\includegraphics[width=0.4\textwidth]{images/student-conv-part2}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Continued: Source Code}
+\includegraphics[width=1\textwidth]{images/student-conv-part3}
 \end{frame}
 
 \begin{frame}[fragile]
