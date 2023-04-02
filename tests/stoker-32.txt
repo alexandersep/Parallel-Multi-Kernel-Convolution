@@ -1,0 +1,4 @@
+stoker-output-32-32-1-32-32.txt
+stoker-output-32-32-3-32-32.txt
+stoker-output-32-32-5-32-32.txt
+stoker-output-32-32-7-32-32.txt
