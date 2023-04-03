@@ -5,6 +5,7 @@
 \usepackage{tikz}
 \usepackage{hyperref}
 \usepackage{fancyvrb}
+\usepackage{listings}
 \usepackage[margin=0.6in]{geometry}
 \usetikzlibrary{positioning,matrix, arrows.meta}
 
@@ -39,6 +40,15 @@ The goal of the assignment is to optimise convolutions in a way that utilizes pa
 We focused on parallelisation and overall speed, utilizing a variety of techniques.
 These techniques are discussed in the subsections.
 
+\subsection{Flatland}
+One of our first key insights was how memory was allocated - instead of several non-contiguous arrays of
+pointers, we realised that at the lowest level, all the data was contiguous. This allowed us to minimise 
+memory accesses by using multiplication and addition to compute the offset of any element from the first 
+element in the array. This is much faster in terms of cycles than memory accesses, but it led to more 
+arithmetic being performed. To remedy this, we precalculated some values in our sum. For example, if we
+entered the relevant section of the "m" loop, then we would calculate the offset given by the m value. 
+This allowed us to minimise time spent waiting for memory accesses and minimise unneccessary arithmetic.
+
 \subsection{Loop Fusing}
 The discussion on loop fusing was inspired from searching for optimisation strategies online.
 This stackoverflow discussion on loop fusing was beneficial in our programme, 
@@ -47,6 +57,18 @@ one using division and modulus. In fact this seems slower, however due to the ab
 effectively division is the least of our problems. In fact this has an openmp name, collapse(). However 
 we decided to do it manually as it was our first solution, and it is clearer to the programmer rather than
 having it behind a macro of openmp.
+
+\subsection{Unrolling}
+In order to increase cache hits, we attempted to unroll the inner (or tight) loop. Initially this was done 
+with GCC using \lstinline{#pragma GCC unroll 16} as we knew that the number of channels was a multiple of 2 of minimum 32.
+As we were doing two calculations per loop iteration, we could then do a loop of size 32 (2 * 16) and this would
+be usable with any correct kernel. However, by inspecting the size of the executable, we noticed that the size did not change
+with or without the directive, implying it was not working. Moreover, we discovered we could do 4 instructions per tight loop
+as we could load 4 image values into a vector, cast the lowest two to doubles, multiply them and then shuffle our original vector
+such that we could then repeat the process with the upper two lanes. We then decided to manually unroll the loop, as is shown in 
+the final version of our code. This allowed us less branches and greater cache hit rate.
+
+\newpage
 \begin{verbatim}
 for ( m = 0; m < nkernels; m++ ) {
     for ( h = 0; h < height; h++ ) {
@@ -81,6 +103,7 @@ SSE1-4. SSE part requires loading as float casting to double, then loading our d
 the two vectors against each other, adding them up for all the channels, and then once the kernel\_order on x an y of kernels
 has been executed sum up the vector using a single hadd instruction. The reason is because \_\_m128d \_mm\_hadd\_pd(v4sum), only
 stores two lanes, therefore 1 instruction is needed rather than the typical four we would see with float vectors (\_\_mm128).
+\newpage
 \begin{verbatim}
 // Transpose Kernel
 #pragma omp parallel for // maybe this will numb the pain
@@ -105,19 +128,36 @@ for(int n = 0; n < (nkernels*nchannels*kernel_order); n++){
 // __m128d v4sum = _mm_setzero_pd();
 // ... more for loops ...
 // Vectorised Section
-for ( c = 0; c < nchannels; c+=2) {
+        for ( c = 0; c < nchannels; c+=2 ) {
+            // t_kernel is aligned hence the load instead of loadu
+            // cvtps convert float vector to double vector 4 -> 2 (lower) lanes
+            // shuffle by moving 2 high values to take 2 low values spot
+            // mul two double vectors, add them, and sum them up.
+            __m128 v4image_1d = _mm_loadu_ps(image_1d+image_offset+c);
+            __m128d v4image_1d_pd = _mm_cvtps_pd(v4image_1d);
 
-    __m128 v4image_1d = _mm_loadu_ps(image_1d+image_offset+c);
-    __m128d v4image_1d_pd = _mm_cvtps_pd(v4image_1d);
+            __m128d v4t_kernel_pd = _mm_load_pd(t_kernel+kernel_total_offset+c);
 
-    __m128d v4t_kernel_pd = _mm_loadu_pd(t_kernel+kernel_total_offset+c);
+            __m128d product = _mm_mul_pd(v4image_1d_pd, v4t_kernel_pd);
+            v4sum = _mm_add_pd(v4sum, product);
 
-    __m128d product = _mm_mul_pd(v4image_1d_pd, v4t_kernel_pd);
-    v4sum = _mm_add_pd(v4sum, product);
+            c+=2;
+            v4image_1d = _mm_shuffle_ps(v4image_1d, v4image_1d, _MM_SHUFFLE(0, 0, 3, 2));
+            v4image_1d_pd = _mm_cvtps_pd(v4image_1d);
+
+            v4t_kernel_pd = _mm_load_pd(t_kernel+kernel_total_offset+c);
+
+            product = _mm_mul_pd(v4image_1d_pd, v4t_kernel_pd);
+            v4sum = _mm_add_pd(v4sum, product);
+
+            c+=2;
+            //unrolled 8 times
+        }
+    }
 }
+v4sum = _mm_hadd_pd(v4sum, v4sum); // add the two lanes together and put in lower lane
+output1d[m * width_times_height + w * height + h] = (float) _mm_cvtsd_f64(v4sum); // extract lower double 
 // .. end of for loops
-v4sum = _mm_hadd_pd(v4sum, v4sum);
-output[m][w][h] = (float) _mm_cvtsd_f64(v4sum);
 \end{verbatim}
 Since nchannels is guaranteed to be a power of 2, a postloop is not required for this for loop.
 
@@ -158,4 +198,3 @@ stdlib-and-colored-output-in-c}
 %\bibliography{references}
 
 \end{document}
-
