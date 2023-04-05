@@ -1,12 +1,10 @@
-# Ignore Executable files generated from Makefile
-
-# Linux Executables
+# Linux Executable
 conv
 
-# Windows Executables
+# Windows Executable
 conv.exe
 
-# Ignore vscode directory
+# vscode directory
 .vscode/
 
 # Latex Output files
@@ -14,9 +12,18 @@ conv.exe
 *.log  
 *.out  
 *.toc
-# Ignore disassembly
+# Ignore disassembly assembly files
 *.asm
 
-# Ignore perf output files
+# perf output files
 perf.data
 perf.data.old
+
+# Beamer Latex files
+presentation.log  
+presentation.out  
+presentation.snm  
+presentation.toc
+presentation.aux  
+presentation.nav  
+presentation.vrb

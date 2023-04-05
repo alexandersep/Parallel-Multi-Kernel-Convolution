@@ -51,6 +51,7 @@ Version 1.1 : Fixed bug in code to create 4d matrix
 #define ANSI_COLOR_CYAN     "\x1b[36m"
 #define ANSI_COLOR_MAGENTA  "\x1b[35m"
 #define ANSI_COLOR_RESET    "\x1b[0m"
+#define SHUFFLE_MASK 0b1110
 
 
 /* Branch prediction USE THIS WITH CAUTION, THE Architecutre is probably better than us at prediction */
@@ -361,7 +362,9 @@ void student_conv(float *** restrict image, int16_t **** restrict kernels, float
     //double sum;
     int kernel_total_offset;
     double * t_kernel = _mm_malloc(sizeof(double) * nchannels * kernel_order * kernel_order * nkernels, 16);
-
+    
+    int trans_loop_cond = nkernels*nchannels*kernel_order;
+    int conv_loop_cond = nkernels*width*height;
     int m_times_kernel_offset;
     int c_times_ko2;
     int x_times_kernel_order;
@@ -371,7 +374,7 @@ void student_conv(float *** restrict image, int16_t **** restrict kernels, float
     // USE AT OWN RISK
     // MIGHT CAUSE YOUR CAT TO RUN AWAY
     #pragma omp parallel for // maybe this will numb the pain
-    for(int n = 0; n < (nkernels*nchannels*kernel_order); n++){
+    for(int n = 0; n < trans_loop_cond; n++){
         int m = n/(nchannels*kernel_order);
         int c = (n%(nchannels*kernel_order))/kernel_order; 
         int x = (n%(nchannels*kernel_order))%kernel_order; 
@@ -387,10 +390,11 @@ void student_conv(float *** restrict image, int16_t **** restrict kernels, float
     }
 
     #pragma omp parallel for
-    for (int n = 0; n < nkernels*width*height; n++) {
+    for (int n = 0; n < conv_loop_cond; n++) {
+        int n_mod = (n%(width*height));
         int m = n/(width*height);
-        int w = (n%(width*height))/height;
-        int h = (n%(width*height))%height;
+        int w = n_mod/height;
+        int h = n_mod%height;
         m_times_kernel_offset = m * kernel_offset;
         __m128d v4sum = _mm_setzero_pd();
         for (x = 0; x < kernel_order; x++ ) {
@@ -413,7 +417,7 @@ void student_conv(float *** restrict image, int16_t **** restrict kernels, float
                     v4sum = _mm_add_pd(v4sum, product);
 
                     c+=2;
-                    v4image_1d = _mm_shuffle_ps(v4image_1d, v4image_1d, _MM_SHUFFLE(0, 0, 3, 2));
+                    v4image_1d = _mm_shuffle_ps(v4image_1d, v4image_1d, SHUFFLE_MASK);
                     v4image_1d_pd = _mm_cvtps_pd(v4image_1d);
 
                     v4t_kernel_pd = _mm_load_pd(t_kernel+kernel_total_offset+c);
@@ -431,7 +435,7 @@ void student_conv(float *** restrict image, int16_t **** restrict kernels, float
                     v4sum = _mm_add_pd(v4sum, product);
 
                     c+=2;
-                    v4image_1d = _mm_shuffle_ps(v4image_1d, v4image_1d, _MM_SHUFFLE(0, 0, 3, 2));
+                    v4image_1d = _mm_shuffle_ps(v4image_1d, v4image_1d, SHUFFLE_MASK);
                     v4image_1d_pd = _mm_cvtps_pd(v4image_1d);
 
                     v4t_kernel_pd = _mm_load_pd(t_kernel+kernel_total_offset+c);
@@ -449,7 +453,7 @@ void student_conv(float *** restrict image, int16_t **** restrict kernels, float
                     v4sum = _mm_add_pd(v4sum, product);
 
                     c+=2;
-                    v4image_1d = _mm_shuffle_ps(v4image_1d, v4image_1d, _MM_SHUFFLE(0, 0, 3, 2));
+                    v4image_1d = _mm_shuffle_ps(v4image_1d, v4image_1d, SHUFFLE_MASK);
                     v4image_1d_pd = _mm_cvtps_pd(v4image_1d);
 
                     v4t_kernel_pd = _mm_load_pd(t_kernel+kernel_total_offset+c);
@@ -467,7 +471,7 @@ void student_conv(float *** restrict image, int16_t **** restrict kernels, float
                     v4sum = _mm_add_pd(v4sum, product);
 
                     c+=2;
-                    v4image_1d = _mm_shuffle_ps(v4image_1d, v4image_1d, _MM_SHUFFLE(0, 0, 3, 2));
+                    v4image_1d = _mm_shuffle_ps(v4image_1d, v4image_1d, SHUFFLE_MASK);
                     v4image_1d_pd = _mm_cvtps_pd(v4image_1d);
 
                     v4t_kernel_pd = _mm_load_pd(t_kernel+kernel_total_offset+c);
