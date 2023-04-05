@@ -7,7 +7,12 @@ conv.exe
 # vscode directory
 .vscode/
 
-# assembly files
+# Latex Output files
+*.aux  
+*.log  
+*.out  
+*.toc
+# Ignore disassembly assembly files
 *.asm
 
 # perf output files
