@@ -1,0 +1,7 @@
+stoker-output-64-64-1-32-32.txt
+stoker-output-64-64-3-32-32.txt
+stoker-output-64-64-3-64-64.txt
+stoker-output-64-64-5-32-32.txt
+stoker-output-64-64-5-64-64.txt
+stoker-output-64-64-7-32-32.txt
+stoker-output-64-64-7-64-64.txt
