@@ -1,0 +1,12 @@
+stoker-output-100-100-1-32-32.txt
+stoker-output-100-100-1-64-64.txt
+stoker-output-100-100-1-128-128.txt
+stoker-output-100-100-3-128-128.txt
+stoker-output-100-100-3-32-32.txt
+stoker-output-100-100-3-64-64.txt
+stoker-output-100-100-5-128-128.txt
+stoker-output-100-100-5-32-32.txt
+stoker-output-100-100-5-64-64.txt
+stoker-output-100-100-7-128-128.txt
+stoker-output-100-100-7-32-32.txt
+stoker-output-100-100-7-64-64.txt
