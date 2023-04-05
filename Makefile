@@ -9,14 +9,14 @@ CC=gcc
 CFILES=conv-harness.c
 
 # C Flags
-CFLAGS=-O3 -msse4 -Wall -Werror -fopenmp -pthread -lm
+CFLAGS=-O3 -msse4 -Wall -Werror -fopenmp
 # Debug Flags
-DEBUG_CFLAGS=-g -msse4 -Wall -Werror -fopenmp -pthread
+DEBUG_CFLAGS=-g -msse4 -Wall -Werror -fopenmp
 
 # Default command testing on
 # width, height, kernel order, nchannels pow of 2, nkernels pow of 2 
-# COMMAND=100 100 5 32 32
-COMMAND=16 16 7 256 256  
+ COMMAND=100 100 5 128 128 
+#COMMAND=32 32 7 64 64
 
 # Name of Executables
 EXEC=conv

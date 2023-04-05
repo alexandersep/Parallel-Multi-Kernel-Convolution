@@ -14,3 +14,9 @@ conv.exe
 *.log  
 *.out  
 *.toc
+# Ignore disassembly
+*.asm
+
+# Ignore perf output files
+perf.data
+perf.data.old
