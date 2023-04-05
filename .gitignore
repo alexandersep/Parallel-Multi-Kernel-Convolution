@@ -20,10 +20,10 @@ perf.data
 perf.data.old
 
 # Beamer Latex files
-presentation.log  
-presentation.out  
-presentation.snm  
-presentation.toc
-presentation.aux  
-presentation.nav  
-presentation.vrb
+*.log  
+*.out  
+*.snm  
+*.toc
+*.aux  
+*.nav  
+*.vrb

@@ -1,2 +1,2 @@
-\frametitle{Graphing up to 128 kernel\_orders}
-\includegraphics[width=0.7\textwidth]{images/Stoker-100-100}
+\frametitle{Image Kernel Order and Time Increase}
+\includegraphics[width=1\textwidth]{images/kernel_vs_time_64-64-X-32-32}

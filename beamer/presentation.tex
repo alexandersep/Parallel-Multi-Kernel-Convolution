@@ -326,6 +326,22 @@ With test conv 128 128 7 256 256, we can get to nearly 90x speed increase. \\
 \end{frame}
 
 \begin{frame}[fragile]
+\frametitle{Script for running many iterations of code}
+\begin{verbatim}
+#!/bin/bash
+i=1
+limit=$1
+while [ $i -le $((limit)) ]
+do
+    printf "progress: %d / %d\r" "$i" "$limit"
+    make run | head -n3 \
+        | grep -Eo '[0-9]+ ' >> output.txt
+    i=$(($i+1))
+done
+\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
 \frametitle{Graphing up to 128 kernel\_orders}
 \includegraphics[width=0.7\textwidth]{images/Stoker-32-32}
 \end{frame}
