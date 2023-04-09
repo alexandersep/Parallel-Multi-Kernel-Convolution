@@ -479,7 +479,7 @@ void student_conv(float *** restrict image, int16_t **** restrict kernels, float
         output1d[m * width_times_height + w * height + h] = (float) _mm_cvtsd_f64(v4sum); // extract lower double 
     }
     free(t_kernel); // free the generated transposed array
-}
+ }
 
 int main(int argc, char ** argv)
 {
