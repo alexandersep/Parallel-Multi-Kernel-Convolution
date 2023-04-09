@@ -1,2 +1,2 @@
 #!/bin/sh
-scp sepelena@macneill.scss.tcd.ie:/users/ugrad/sepelena/Concurrency/output.txt .
+scp $1@macneill.scss.tcd.ie:/users/ugrad/$1/Concurrency/output.txt .

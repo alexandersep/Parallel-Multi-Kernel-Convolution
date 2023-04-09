@@ -1,0 +1,22 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - "main"
+
+jobs:
+  release-and-zip:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Zip file structure for Assignment
+        run: zip -r Assignment-2 beamer/presentation.pdf conv-harness.c Makefile tests/ tex/documentation.pdf
+      
+      - uses: rymndhng/release-on-push-action@master
+        with: 
+          bump_version_scheme: major

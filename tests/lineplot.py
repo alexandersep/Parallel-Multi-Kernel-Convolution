@@ -2,7 +2,6 @@ import os
 from sys import argv
 import numpy as np
 import pandas as pd
-import argparse
 import matplotlib.pyplot as plt
 
 def_dict = {'Image Size': 0, 'Kernel Order': 2, 'Num. Channels':3, 'Num. Kernels': 4}
