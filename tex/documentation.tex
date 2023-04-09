@@ -15,7 +15,7 @@
     linktoc=all,     %set to all if you want both sections and subsections linked
 }
 
-\title{CSU33014 Lab 2: Parallel Multichannel Multikernel Convolution}
+\title{CSU33014 Assignment 2: Parallel Multichannel Multikernel Convolution}
 \author{Alexander Sepelenco 20335014, Niall Sauvage 20334203\\
   \small{Trinity College Dublin}
 }
@@ -28,9 +28,9 @@
 
 \section{How to run the code}
 Our code was designed with Stoker in mind, in order to ensure the
-same compilation, Our Makefile is attached with our submission, 
-use it in order to ensure one to one compilation. 
-Either use `make run` to run a defined `COMMAND` or `make all` to only compile.
+same compilation, Our Makefile is attached with our submission,
+which may or may not make it easier to run depending on if you have
+a prexisting makefile already. 
 
 \section{Parallel multichannel convolution}
 Parallel multichannel convolution consists of 3d images, 4d kernels, that means there
@@ -63,11 +63,12 @@ In order to increase cache hits, we attempted to unroll the inner (or tight) loo
 with GCC using \lstinline{#pragma GCC unroll 16} as we knew that the number of channels was a multiple of 2 of minimum 32.
 As we were doing two calculations per loop iteration, we could then do a loop of size 32 (2 * 16) and this would
 be usable with any correct kernel. However, by inspecting the size of the executable, we noticed that the size did not change
-with or without the directive, implying it was not working. Moreover, we discovered we could do 4 instructions per tight loop
-as we could load 4 image values into a vector, cast the lowest two to doubles, multiply them and then shuffle our original vector
-such that we could then repeat the process with the upper two lanes. We then decided to manually unroll the loop to do 16 doubles
-as it was most optimal for our needs. This allowed us less branches and more computation on what we care about. It works out most
-of the time, as the nchannels is the loop that was unrolled meaning that nchannels works best when a big number and it starts at
+with or without the directive, implying it was not working, most likely an issue with understanding its function. 
+Moreover, we discovered we could do 4 instructions per tight loop as we could load 4 image values into a vector, 
+cast the lowest two to doubles, multiply them and then shuffle our original vector such that we could then repeat 
+the process with the upper two lanes. We then decided to manually unroll the loop to do 16 doubles as it was most 
+optimal for our needs. This allowed us to use less branches and more computation. It works out most of the time, 
+as the nchannels is the loop that was unrolled meaning that nchannels works best when a big number and it starts at
 16 and goes to 2048, which is quite good for loop unrollling. 
 
 \begin{verbatim}
@@ -125,7 +126,7 @@ for(int n = 0; n < (nkernels*nchannels*kernel_order); n++){
             (double) kernel[kernel_total_offset_precalc + y];
     }
 }
-#define SHUFFLE_MASK 0b1110
+#define SHUFFLE_MASK 0b1110 // equivalent to _MM_SHUFFLE(0, 0, 3, 2);
 // Vectorised Section
         for ( c = 0; c < nchannels; c+=2 ) {
             // t_kernel is aligned hence the load instead of loadu
@@ -161,7 +162,13 @@ Since nchannels is guaranteed to be a power of 2, a postloop is not required for
 
 \subsubsection{Alignment}
 Alignmnet was used on our transposed array, as it is an array we can align by 16 bytes and allow
-for the usage of \_mm\_load\_pd, in order to guarantee more cache hits.
+for the usage of \_mm\_load\_pd, in order to guarantee more cache hits. The transposed array is
+also a double since there is an issue with accuracy with float calculations. The array could have
+been a float but cast as a double in the inner most loop calculation, but because generated a double
+array from the start does not cost speed but space, generating a double array rather than float and casting
+similarly how we had to cast image array. The reason image array was not cast as a double above is because
+the kernel is relatively small, the image array is quite big and the benefit of making a double array equivalent
+of image is worse on speed than casting. 
 
 \begin{verbatim}
 void* _mm_malloc (size_t size, size_t align) // for aligning in intel architecutre
@@ -177,7 +184,7 @@ Student conv time: 487744 microseconds
 The total speed up time was 50.42x and 24106656 microseconds less
 COMMENT: sum of absolute differences (0.000000) within acceptable range (0.062500)
 \end{verbatim}
-The code from multiple tests, averages around 39 times the speed increase from the original
+The code from multiple tests, averages around 50 times the speed increase from the original
 code.
 
 \section{Sources}

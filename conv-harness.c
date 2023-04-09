@@ -44,6 +44,8 @@ Version 1.1 : Fixed bug in code to create 4d matrix
     https://stackoverflow.com/questions/3219393/stdlib-and-colored-output-in-c 
     https://stackoverflow.com/questions/18749493/openmp-drastically-slows-down-for-loop/18763554#18763554
 */
+
+// Define coulours from ANSI standard for printing with colour 
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
 #define ANSI_COLOR_YELLOW   "\x1b[33m"
@@ -51,7 +53,8 @@ Version 1.1 : Fixed bug in code to create 4d matrix
 #define ANSI_COLOR_CYAN     "\x1b[36m"
 #define ANSI_COLOR_MAGENTA  "\x1b[35m"
 #define ANSI_COLOR_RESET    "\x1b[0m"
-#define SHUFFLE_MASK 0b1110
+
+#define SHUFFLE_MASK 0b1110 // optimized calculation, equivalent _MM_SHUFFLE(0, 0, 3, 2);
 
 
 /* Branch prediction USE THIS WITH CAUTION, THE Architecutre is probably better than us at prediction */
@@ -346,8 +349,7 @@ void student_conv(float *** restrict image, int16_t **** restrict kernels, float
         int kernel_order)
 {
 
-    //int h, w, x, y, c, m;
-    int y, x, c;
+    // declare variables and generate calculations for optimizing in loops below
     int width_times_height = width * height;
     float * output1d = **output;
     float * image_1d = **image;
@@ -355,20 +357,19 @@ void student_conv(float *** restrict image, int16_t **** restrict kernels, float
     int ko2 = kernel_order * kernel_order;
     int width_offset = (height+kernel_order) * nchannels;
     int kernel_offset = nchannels * ko2;
-    //int kernel_offset_increase = ko2 << 3;
-    int image_offset_precalc;
-    int kernel_total_offset_precalc;
-    int image_offset;
-    //double sum;
-    int kernel_total_offset;
-    double * t_kernel = _mm_malloc(sizeof(double) * nchannels * kernel_order * kernel_order * nkernels, 16);
-    
     int trans_loop_cond = nkernels*nchannels*kernel_order;
     int conv_loop_cond = nkernels*width*height;
     int m_times_kernel_offset;
     int c_times_ko2;
     int x_times_kernel_order;
+    int image_offset_precalc;
+    int kernel_total_offset_precalc;
+    int image_offset;
+    int kernel_total_offset;
     int t_kernel_total_offset_precalc;
+
+    // generate 16 byte aligned double array which will be transpose of kernels in 1D for efficiency
+    double * t_kernel = _mm_malloc(sizeof(double) * nchannels * kernel_order * kernel_order * nkernels, 16); 
 
     // VERY BAD TRANSPOSE ALGORITHM
     // USE AT OWN RISK
@@ -397,13 +398,13 @@ void student_conv(float *** restrict image, int16_t **** restrict kernels, float
         int h = n_mod%height;
         m_times_kernel_offset = m * kernel_offset;
         __m128d v4sum = _mm_setzero_pd();
-        for (x = 0; x < kernel_order; x++ ) {
+        for (int x = 0; x < kernel_order; x++ ) {
             image_offset_precalc = (w+x) * width_offset;
             kernel_total_offset_precalc = m_times_kernel_offset + x * kernel_order * nchannels;
-            for ( y = 0; y < kernel_order; y++ ) {
+            for (int y = 0; y < kernel_order; y++ ) {
                 image_offset = image_offset_precalc + (h+y) * nchannels;
                 kernel_total_offset = kernel_total_offset_precalc + y * nchannels;
-                for ( c = 0; c < nchannels; c+=2 ) {
+                for (int c = 0; c < nchannels; c+=16) {
                     // t_kernel is aligned hence the load instead of loadu
                     // cvtps convert float vector to double vector 4 -> 2 (lower) lanes
                     // shuffle by moving 2 high values to take 2 low values spot
@@ -416,65 +417,58 @@ void student_conv(float *** restrict image, int16_t **** restrict kernels, float
                     __m128d product = _mm_mul_pd(v4image_1d_pd, v4t_kernel_pd);
                     v4sum = _mm_add_pd(v4sum, product);
 
-                    c+=2;
                     v4image_1d = _mm_shuffle_ps(v4image_1d, v4image_1d, SHUFFLE_MASK);
                     v4image_1d_pd = _mm_cvtps_pd(v4image_1d);
 
-                    v4t_kernel_pd = _mm_load_pd(t_kernel+kernel_total_offset+c);
+                    v4t_kernel_pd = _mm_load_pd(t_kernel+kernel_total_offset+c+2);
 
                     product = _mm_mul_pd(v4image_1d_pd, v4t_kernel_pd);
                     v4sum = _mm_add_pd(v4sum, product);
 
-                    c+=2;
-                    v4image_1d = _mm_loadu_ps(image_1d+image_offset+c);
+                    v4image_1d = _mm_loadu_ps(image_1d+image_offset+c+4);
                     v4image_1d_pd = _mm_cvtps_pd(v4image_1d);
 
-                    v4t_kernel_pd = _mm_load_pd(t_kernel+kernel_total_offset+c);
+                    v4t_kernel_pd = _mm_load_pd(t_kernel+kernel_total_offset+c+4);
 
                     product = _mm_mul_pd(v4image_1d_pd, v4t_kernel_pd);
                     v4sum = _mm_add_pd(v4sum, product);
 
-                    c+=2;
                     v4image_1d = _mm_shuffle_ps(v4image_1d, v4image_1d, SHUFFLE_MASK);
                     v4image_1d_pd = _mm_cvtps_pd(v4image_1d);
 
-                    v4t_kernel_pd = _mm_load_pd(t_kernel+kernel_total_offset+c);
+                    v4t_kernel_pd = _mm_load_pd(t_kernel+kernel_total_offset+c+6);
 
                     product = _mm_mul_pd(v4image_1d_pd, v4t_kernel_pd);
                     v4sum = _mm_add_pd(v4sum, product);
 
-                    c+=2;
-                    v4image_1d = _mm_loadu_ps(image_1d+image_offset+c);
+                    v4image_1d = _mm_loadu_ps(image_1d+image_offset+c+8);
                     v4image_1d_pd = _mm_cvtps_pd(v4image_1d);
 
-                    v4t_kernel_pd = _mm_load_pd(t_kernel+kernel_total_offset+c);
+                    v4t_kernel_pd = _mm_load_pd(t_kernel+kernel_total_offset+c+8);
 
                     product = _mm_mul_pd(v4image_1d_pd, v4t_kernel_pd);
                     v4sum = _mm_add_pd(v4sum, product);
 
-                    c+=2;
                     v4image_1d = _mm_shuffle_ps(v4image_1d, v4image_1d, SHUFFLE_MASK);
                     v4image_1d_pd = _mm_cvtps_pd(v4image_1d);
 
-                    v4t_kernel_pd = _mm_load_pd(t_kernel+kernel_total_offset+c);
+                    v4t_kernel_pd = _mm_load_pd(t_kernel+kernel_total_offset+c+10);
 
                     product = _mm_mul_pd(v4image_1d_pd, v4t_kernel_pd);
                     v4sum = _mm_add_pd(v4sum, product);
 
-                    c+=2;
-                    v4image_1d = _mm_loadu_ps(image_1d+image_offset+c);
+                    v4image_1d = _mm_loadu_ps(image_1d+image_offset+c+12);
                     v4image_1d_pd = _mm_cvtps_pd(v4image_1d);
 
-                    v4t_kernel_pd = _mm_load_pd(t_kernel+kernel_total_offset+c);
+                    v4t_kernel_pd = _mm_load_pd(t_kernel+kernel_total_offset+c+12);
 
                     product = _mm_mul_pd(v4image_1d_pd, v4t_kernel_pd);
                     v4sum = _mm_add_pd(v4sum, product);
 
-                    c+=2;
                     v4image_1d = _mm_shuffle_ps(v4image_1d, v4image_1d, SHUFFLE_MASK);
                     v4image_1d_pd = _mm_cvtps_pd(v4image_1d);
 
-                    v4t_kernel_pd = _mm_load_pd(t_kernel+kernel_total_offset+c);
+                    v4t_kernel_pd = _mm_load_pd(t_kernel+kernel_total_offset+c+14);
 
                     product = _mm_mul_pd(v4image_1d_pd, v4t_kernel_pd);
                     v4sum = _mm_add_pd(v4sum, product);
@@ -484,6 +478,7 @@ void student_conv(float *** restrict image, int16_t **** restrict kernels, float
         v4sum = _mm_hadd_pd(v4sum, v4sum); // add the two lanes together and put in lower lane
         output1d[m * width_times_height + w * height + h] = (float) _mm_cvtsd_f64(v4sum); // extract lower double 
     }
+    free(t_kernel); // free the generated transposed array
 }
 
 int main(int argc, char ** argv)
