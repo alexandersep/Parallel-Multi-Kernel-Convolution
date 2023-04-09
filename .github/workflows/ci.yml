@@ -18,9 +18,9 @@ jobs:
         run: zip -r Assignment-2.zip beamer/presentation.pdf conv-harness.c Makefile tests/ tex/documentation.pdf
 
       - name: Commit and push
-          uses: EndBug/add-and-commit@v7
-          with:
-            add: '["Assignment-2.zip"]'
-            message: 'My commit message'
-            push: true
+        uses: EndBug/add-and-commit@v7
+        with:
+          add: '["Assignment-2.zip"]'
+          message: 'My commit message'
+          push: true
       
