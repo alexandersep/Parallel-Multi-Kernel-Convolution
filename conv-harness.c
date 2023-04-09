@@ -1,3 +1,4 @@
+/* Modified by: Alexander Sepelenco 20335014, Niall Sauvage 20334203 */
 /* Test and timing harness program for developing a multichannel
    multikernel convolution (as used in deep learning networks)
 

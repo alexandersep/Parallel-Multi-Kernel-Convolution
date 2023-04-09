@@ -1,3 +1,4 @@
+# Created by: Alexander Sepelenco 20335014, Niall Sauvage 20334203
 import os
 from sys import argv
 import numpy as np

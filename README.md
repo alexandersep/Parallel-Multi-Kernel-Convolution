@@ -9,10 +9,7 @@ Concurrent Systems I - CSU33014, Assignment 2 in Trinity College Dublin.
 2. Compile and run using `make run`
 3. For graphing data, ensure python 3 is installed with pip and 
    install requirements of python `pip install -r requirements.txt`
-4. Run graphing using `python graph.py -g file1.txt file2.txt` 
-   or `python graph.py --graph`. Note the structure of the files must
-   be taken from the /tests directory, where David's code is tested followed
-   by our code in an interleave format and new lines after each number 
+4. Run graphing using `python lineplot.py/boxplot.py file1.txt` 
 5. To uninstall python dependencies run `pip uninstall -r requirements.txt`
 
 ### Contributors

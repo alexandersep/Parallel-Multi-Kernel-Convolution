@@ -1,3 +1,4 @@
+# Created by: Alexander Sepelenco 20335014, Niall Sauvage 20334203
 # Usage: make # Compiles the programme
 # 		 make conv # Another way to compile the programme 
 # 		 make run # Runs programme 
