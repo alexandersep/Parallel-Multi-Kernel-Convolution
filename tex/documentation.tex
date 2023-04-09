@@ -177,7 +177,7 @@ __m128d _mm_load_pd(double const * mem_addr); // load 16 byte aligned memory loc
 \end{verbatim}
 
 \section{Speed Tests}
-Tested using ./conv 128 128 7 128 128 
+Tested using ./conv 128 128 7 128 128
 \begin{verbatim}
 David conv time: 24594400 microseconds
 Student conv time: 487744 microseconds
@@ -185,7 +185,9 @@ The total speed up time was 50.42x and 24106656 microseconds less
 COMMENT: sum of absolute differences (0.000000) within acceptable range (0.062500)
 \end{verbatim}
 The code from multiple tests, averages around 50 times the speed increase from the original
-code.
+code. More standardized tests on many inputs can be found in our submission in the zip of 
+the folder named tests. The structure is David's tests interleaved with our tests in that order.
+It is also noticeable by simply viewing which code is being run since our code is faster.
 
 \section{Sources}
 \begin{verbatim}
